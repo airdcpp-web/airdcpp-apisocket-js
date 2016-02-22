@@ -14,16 +14,10 @@ const searchItems = [
 		description: 'Windows directory'
 	}, {
 		query: {
-			extensions: [ 'rar' ],
+			extensions: [ 'iso' ],
 			min_size: 500*1024*1024
 		}, 
 		description: 'ISO file(s) over 500 MB'
-	}, {
-		query: {
-			pattern: 'Photoshop',
-			file_type: 'directory'
-		}, 
-		description: 'Photoshop'
 	}
 ];
 
