@@ -1,0 +1,17 @@
+module.exports = {
+	// API settings
+	url: 'localhost:5600',
+	username: 'myusername',
+	password: 'mypassword',
+	secure: false,
+
+	// Reconnect
+	autoReconnect: true,
+	reconnectInterval: 10,
+
+	// Logging
+	logLevel: 'verbose',
+	ignoredConsoleEvents: [
+
+	],
+};
