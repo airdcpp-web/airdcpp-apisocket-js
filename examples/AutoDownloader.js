@@ -42,7 +42,7 @@ const intervalMinutes = 5;
 // CONFIG END
 
 
-const ApiSocket = require('../').default;
+const ApiSocket = require('../');
 
 const socket = ApiSocket(require('./settings'));
 

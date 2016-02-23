@@ -27,7 +27,7 @@ const checkConnectingUsers = true;
 // CONFIG END
 
 
-const ApiSocket = require('../').default;
+const ApiSocket = require('../');
 
 const socket = ApiSocket(require('./settings'));
 
@@ -62,6 +62,15 @@ const onUserResultsReceived = (user, item, results) => {
 	});
 };
 
+const onUserSearchFailed = (user, item, error) => {
+	// Most likely the search timed out
+	socket.post('hubs/v0/status', {
+		hub_urls: [ user.hub_url ],
+		text: user.nick + ': ' + error.message,
+		severity: 'warning',
+	});
+};
+
 const onUserConnected = (user) => {
 	// Direct search is only support in ADC hubs
 	if (user.flags.indexOf('nmdc') !== -1) {
@@ -74,7 +83,8 @@ const onUserConnected = (user) => {
 			user: user,
 			query: item.query
 		})
-			.then(onUserResultsReceived.bind(this, user, item));
+			.then(onUserResultsReceived.bind(this, user, item))
+			.catch(onUserSearchFailed.bind(this, user, item));
 	});
 };
 
@@ -87,7 +97,7 @@ const onShareResultsReceived = (item, results) => {
 	// Forbidden item found from own share: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
 	socket.post('events/v0/message', {
 		text: 'Forbidden item found from own share' + ': ' + item.description + ' (' + formatResultPaths(results) + ')',
-		severity: 'info',
+		severity: 'warning',
 	});
 };
 
