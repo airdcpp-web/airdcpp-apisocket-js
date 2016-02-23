@@ -181,6 +181,18 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 		return isConnected() && !!authToken;
 	};
 
+	const disconnect = () => {
+		if (!ws) {
+			return;
+		}
+
+		logger.info('Disconnecting socket');
+		clearTimeout(reconnectTimer);
+
+		//authToken = null;
+		ws.close();
+	};
+
 	socket = {
 		get nativeSocket() {
 			return ws;
@@ -203,24 +215,13 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 			return startConnect(handleAuthorize);
 		},
 
-		disconnect() {
-			if (!ws) {
-				return;
-			}
-
-			logger.info('Disconnecting socket');
-			clearTimeout(reconnectTimer);
-
-			//authToken = null;
-			ws.close();
-		},
-
 		destroy() {
 			const resolver = Promise.pending();
 			socket.delete(ApiConstants.LOGOUT_URL)
 				.then((data) => {
 					logger.info('Logout succeed');
 					authToken = null;
+					disconnect();
 
 					resolver.resolve(data);
 				})
@@ -240,6 +241,7 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 			disconnectedHandler = handler;
 		},
 
+		disconnect,
 		isConnected,
 		isReady,
 	};

@@ -25,7 +25,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 			}, []);
 		}
 
-		printHandler(...printableArgs);
+		printHandler.apply(console, printableArgs);
 	};
 
 	const Impl = {

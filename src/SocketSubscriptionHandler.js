@@ -1,4 +1,4 @@
-import invariant from 'invariant';
+//import invariant from 'invariant';
 import { EventEmitter } from 'events';
 
 
@@ -21,7 +21,6 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	const removeSocketListener = (subscriptionUrl, subscriptionId, callback, sendApi) => {
 		if (!socket.isReady()) {
-			invariant(Object.keys(subscriptions).length === 0, 'Subscriptions not empty for a disconnected socket');
 			return;
 		}
 
@@ -38,21 +37,21 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		}
 	};
 
-	const removeMessageListener = (subscriptionId, callback) => {
+	const removeLocalListener = (subscriptionId, callback) => {
 		emitter.removeListener(subscriptionId, callback);
 	};
 
 	// Public
 
 	// Listen to a specific event without sending subscription to the server
-	socket.addMessageListener = (event, callback, id) => {
+	socket.addLocalListener = (event, callback, id) => {
 		const subscriptionId = getSubscribtionId(event, id);
 		emitter.on(subscriptionId, callback);
-		return () => removeMessageListener(subscriptionId, callback); 
+		return () => removeLocalListener(subscriptionId, callback); 
 	};
 
 	// Listen to a specific event and manage the API subscription automatically
-	socket.addListener = (apiModuleUrl, event, callback, entityId) => {
+	socket.addSocketListener = (apiModuleUrl, event, callback, entityId) => {
 		if (!socket.isReady()) {
 			throw 'Listeners can be only for a connected socket';
 		}

@@ -113,7 +113,7 @@ const searchOwnShare = () => {
 
 socket.onConnected = () => {
 	if (checkConnectingUsers) {
-		socket.addListener('hubs/v0', 'hub_user_connected', onUserConnected);
+		socket.addSocketListener('hubs/v0', 'hub_user_connected', onUserConnected);
 	}
 
 	if (checkOwnShare) {
