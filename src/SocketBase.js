@@ -233,7 +233,10 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 				.then((data) => {
 					logger.info('Logout succeed');
 					authToken = null;
-					disconnect();
+
+					// Try to avoid cases when the disconnected event is fired before
+					// resolver actions are completed
+					setTimeout(disconnect);
 
 					resolver.resolve(data);
 				})

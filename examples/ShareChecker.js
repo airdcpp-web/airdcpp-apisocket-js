@@ -64,6 +64,13 @@ const onUserResultsReceived = (user, item, results) => {
 
 const onUserSearchFailed = (user, item, error) => {
 	// Most likely the search timed out
+
+	// All clients don't support sending a "no results" status for direct searches, ignore the errors for them
+	if (user.flags.indexOf('asch') === -1) {
+		return;
+	}
+
+	// Report it in order to be able detect bugs and connectivity issues
 	socket.post('hubs/v0/status', {
 		hub_urls: [ user.hub_url ],
 		text: user.nick + ': ' + error.message,
