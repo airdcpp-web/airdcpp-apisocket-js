@@ -46,11 +46,11 @@ socket.connect();
 
 ## Getting started
 
-To add the package as dependency of an existing npm project, you can run
+Save the latest release by running 
 
 ``npm install airdcpp-apisocket --save``
 
-If you are unfamiliar with writing code for Node.js, you can check out [this beginners tutorial](http://blog.modulus.io/absolute-beginners-guide-to-nodejs).
+You must have [Node.js](https://nodejs.org) installed first. If you are unfamiliar with writing code for Node.js, you can check out [this beginners tutorial](http://blog.modulus.io/absolute-beginners-guide-to-nodejs).
 
 ## Development tips
 
