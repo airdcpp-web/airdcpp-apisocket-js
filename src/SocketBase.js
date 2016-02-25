@@ -27,6 +27,7 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 
 	let socket = null;
 	let reconnectTimer = null;
+	let disconnected = true;
 
 	let connectedHandler = null;
 	let disconnectedHandler = null;
@@ -39,13 +40,13 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 
 		requests.onSocketDisconnected();
 		subscriptions.onSocketDisconnected();
+		ws = null;
 		
 		if (disconnectedHandler) {
 			disconnectedHandler(event.reason, event.code);
 		}
 
-		ws = null;
-		if (authToken && options.autoReconnect) {
+		if (authToken && options.autoReconnect && !disconnected) {
 			socket.reconnect()
 				.catch((error) => console.error('Reconnect failed for a closed socket', error.message));
 		}
@@ -167,29 +168,33 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 	};
 
 	const startConnect = (authenticationHandler, reconnectOnFailure) => {
+		disconnected = false;
 		return new Promise((resolve, reject) => {
 			logger.info('Starting socket connect');
 			connectInternal(resolve, reject, authenticationHandler, reconnectOnFailure);
 		});
 	};
 
+	// Is the socket connected but not possibly authorized?
 	const isConnected = () => {
 		return ws && ws.readyState === ws.OPEN;
 	};
 
+	// Is the socket connected and authorized?
 	const isReady = () => {
 		return isConnected() && !!authToken;
 	};
 
+	// Disconnects the socket but keeps the session token
 	const disconnect = () => {
 		if (!ws) {
 			return;
 		}
 
+		disconnected = true;
 		logger.info('Disconnecting socket');
 		clearTimeout(reconnectTimer);
 
-		//authToken = null;
 		ws.close();
 	};
 
@@ -202,19 +207,26 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 			return startConnect(() => handleLogin(username, password), reconnectOnFailure);
 		},
 
+		// Connect and attempt to associate the socket with an existing session
 		reconnect(token) {
-			logger.info('Reconnecting socket');
 			if (isConnected()) {
-				disconnect();
+				throw 'Reconnect may only be used for a closed socket';
 			}
 
 			if (token) {
 				authToken = token;
 			}
 
+			if (!authToken) {
+				throw 'No session token available for reconnecting';
+			}
+
+			logger.info('Reconnecting socket');
+
 			return startConnect(handleAuthorize);
 		},
 
+		// Remove the associated API session and close the socket
 		destroy() {
 			const resolver = Promise.pending();
 			socket.delete(ApiConstants.LOGOUT_URL)
@@ -233,10 +245,12 @@ const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
 			return resolver.promise;
 		},
 
+		// Function to call each time the socket has been connected
 		set onConnected(handler) {
 			connectedHandler = handler;
 		},
 
+		// Function to call each time the socket has been disconnected
 		set onDisconnected(handler) {
 			disconnectedHandler = handler;
 		},
