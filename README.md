@@ -78,7 +78,7 @@ The ADC protocol specifications can be found from http://adc.sourceforge.net/ADC
 
 There are a few examples demonstrating how to use the connector in real projects. The examples are simplified and generally not meant for regular use.
 
-Examples require a recent version of nodejs and version 0.17.0 or newer Web Client to work. Please note the [recommended hubsofts to use](#hubsofts) as the examples may not work with all hubsofts.
+Examples require a recent version of nodejs and [AirDC++ Web Client](https://github.com/airdcpp-web/airdcpp-webclient) 1.0.0 or newer to work. Please note the [recommended hubsofts to use](#hubsofts) as the examples may not work with all hubsofts.
 
 1. Clone the repository
 2. Install dependencies and build the project by running the following commands in the main directory
