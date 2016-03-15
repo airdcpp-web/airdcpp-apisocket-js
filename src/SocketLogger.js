@@ -17,7 +17,7 @@ const Severities = {
 
 const Logger = ({ logLevel = LOG_VERBOSE }) => {
 	const print = (args, printHandler, argFormat) => {
-		let printableArgs = [ ...args ];
+		let printableArgs = [ ...Array.prototype.slice.call(args) ];
 		if (argFormat) {
 			printableArgs = printableArgs.reduce((reduced, arg) => {
 				reduced.push(argFormat(arg));

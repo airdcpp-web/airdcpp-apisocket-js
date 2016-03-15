@@ -9,7 +9,11 @@ const searchItems = [
 	{
 		query: {
 			pattern: 'System32',
-			file_type: 'directory'
+			file_type: 'directory',
+
+			// If no match_type is provided, the full path is matched.
+			// Exact name match should be used when possible as it will also consume less resources when matching.
+			match_type: 'name_exact'
 		},
 		description: 'Windows directory'
 	}, {
