@@ -43,6 +43,8 @@ socket.connect();
  * [Getting started](#getting-started)
  * [Development tips](#development-tips)
  * [Running the examples](#running-the-examples)
+ 
+Please post any bugs or questions you may have on the issue tracker.
 
 ## Getting started
 
