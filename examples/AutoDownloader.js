@@ -14,7 +14,7 @@ const searchItems = [
 			file_type: 'video'
 		},
 		downloadData: {
-			target: '/home/videos/',
+			target_directory: '/home/videos/',
 		}
 	}, {
 		query: {
@@ -22,16 +22,16 @@ const searchItems = [
 			extensions: [ 'iso' ]
 		}, 
 		downloadData: {
-			target: null, // The default download directory will be used
+			target_directory: null, // The default download directory will be used
 			priority: 0, // Paused
 		}
 	}, {
 		query: {
-			pattern: 'NVIDIA',
+			pattern: 'Python',
 			file_type: 'directory',
 		},
 		downloadData: {
-			target: 'E:\\Downloads\\',
+			target_directory: 'C:\\Downloads\\', // Windows path
 			priority: 0, // Paused
 		}
 	}
