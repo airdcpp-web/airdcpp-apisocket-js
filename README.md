@@ -46,13 +46,19 @@ socket.connect();
  
 Please post any bugs or questions you may have on the issue tracker.
 
+## Prerequisites
+
+You must have [Node.js](https://nodejs.org) installed for using the API connector.
+
+If you are going to use the connector in browser environment, see [AirDC++ Web UI](https://github.com/airdcpp-web/airdcpp-webui/blob/master/src/services/SocketService.js) for example usage.
+
 ## Getting started
 
-Save the latest release by running 
+Add the connector as dependency to an existing Node project by running 
 
 ``npm install airdcpp-apisocket --save``
 
-You must have [Node.js](https://nodejs.org) installed first. If you are unfamiliar with writing code for Node.js, you can check out [this beginners tutorial](http://blog.modulus.io/absolute-beginners-guide-to-nodejs).
+If you are unfamiliar with writing code for [Node.js](https://nodejs.org), you can check out [this beginners tutorial](http://blog.modulus.io/absolute-beginners-guide-to-nodejs).
 
 ## Development tips
 
@@ -91,4 +97,4 @@ Examples require a recent version of nodejs and [AirDC++ Web Client](https://air
     ``` 
 3. Create a copy of ``examples/settings.js.example`` and rename it to ``examples/settings.js``
 4. Edit ``examples/settings.js`` to contain the correct API address and user credentials
-5. Run the wanted example with ``node examples/replace_with_example_name.js``
+5. Run the wanted example with ``node examples/replace_with_example_name.js`` (Debian/Ubuntu users may have to use `nodejs` instead of `node`)
