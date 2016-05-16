@@ -22,6 +22,13 @@ const searchItems = [
 			min_size: 500*1024*1024
 		}, 
 		description: 'ISO file(s) over 500 MB'
+	}, {
+		query: {
+			pattern: 'python.exe',
+			file_type: 'file',
+			match_type: 'name_exact'
+		},
+		description: 'Python executable'
 	}
 ];
 
@@ -113,10 +120,10 @@ const onShareResultsReceived = (item, results) => {
 };
 
 const searchOwnShare = () => {
-	// This will only search from the default profile
 	searchItems.forEach((item) => {
 		socket.post('search/v0/query/share', {
-			query: item.query
+			query: item.query,
+			share_profile: undefined // Search from all profiles
 		})
 			.then(onShareResultsReceived.bind(this, item));
 	});
