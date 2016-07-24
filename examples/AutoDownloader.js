@@ -1,6 +1,6 @@
 'use strict';
 
-// This example script will search through a list of items and download
+// This example script will search the specified items in random order and download
 // the best match for each of them
 
 
@@ -10,22 +10,20 @@
 const searchItems = [
 	{
 		query: {
+			pattern: 'ubuntu',
+			extensions: [ 'iso' ]
+		}
+		// Use the default download settings
+	}, {
+		query: {
 			pattern: 'cat videos',
 			file_type: 'video'
 		},
 		downloadData: {
-			target_directory: '/home/videos/',
-		}
-	}, {
-		query: {
-			pattern: 'ubuntu',
-			extensions: [ 'iso' ]
-		}, 
-		downloadData: {
-			target_directory: null, // The default download directory will be used
+			target_directory: '/home/Downloads/Linux/', // Custom location
 			priority: 0, // Paused
 		}
-	}, {
+	},{
 		query: {
 			pattern: 'Python',
 			file_type: 'directory',
