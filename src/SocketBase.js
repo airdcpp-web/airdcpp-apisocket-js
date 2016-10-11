@@ -16,7 +16,7 @@ const defaultOptions = {
 	userSession: false,
 };
 
-const ApiSocket = (userOptions, WebSocketImpl = WebSocket) => {
+const ApiSocket = (userOptions, WebSocketImpl) => {
 	const options = Object.assign({}, defaultOptions, userOptions);
 
 	let subscriptions = null;
