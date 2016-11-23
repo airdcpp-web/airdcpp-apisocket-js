@@ -19,6 +19,17 @@ const SocketRequestHandler = (socket, logger, options) => {
 		return currentCallbackId;
 	};
 
+	const filterPassword = (data) => {
+		if (!data.hasOwnProperty('password')) {
+			return data;
+		}
+
+		return {
+			...data,
+			password: '(hidden)',
+		};
+	};
+
 	const sendRequest = (path, data, method, authenticating) => {
 		if (!socket.isConnected()) {
 			logger.warn('Attempting to send request on a closed socket: ' + path);
@@ -40,7 +51,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 			resolver,
 		};
 
-		logger.verbose(callbackId, method, path, data ? data : '(no data)');
+		logger.verbose(callbackId, method, path, data ? filterPassword(data) : '(no data)');
 
 		const request = {
 			path,
