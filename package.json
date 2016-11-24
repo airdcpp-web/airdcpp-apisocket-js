@@ -40,6 +40,11 @@
     "jest-cli": "^17.0.3",
     "rimraf": "^2.5.2"
   },
+  "jest": {
+    "coverageDirectory": "./coverage/",
+    "collectCoverage": true
+  },
+
 	
 	"main": "./dist/NodeSocket.js"
 }
