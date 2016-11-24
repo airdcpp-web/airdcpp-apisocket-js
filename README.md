@@ -1,4 +1,4 @@
-# airdcpp-apisocket-js
+# airdcpp-apisocket-js [![Travis][build-badge]][build] [![npm package][npm-badge]][npm] [![Coverage][coverage-badge]][coverage] [![Code climate][climate-badge]][climate]
 
 Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-webapi).
 
@@ -98,3 +98,15 @@ Examples require a recent version of nodejs and [AirDC++ Web Client](https://air
 3. Create a copy of ``examples/settings.js.example`` and rename it to ``examples/settings.js``
 4. Edit ``examples/settings.js`` to contain the correct API address and user credentials
 5. Run the wanted example with ``node examples/replace_with_example_name.js`` (Debian/Ubuntu users may have to use `nodejs` instead of `node`)
+
+[build-badge]: https://img.shields.io/travis/airdcpp-web/airdcpp-apisocket-js/master.svg?style=flat-square
+[build]: https://travis-ci.org/airdcpp-web/airdcpp-apisocket-js
+
+[npm-badge]: https://img.shields.io/npm/v/airdcpp-apisocket.svg?style=flat-square
+[npm]: https://www.npmjs.org/package/airdcpp-apisocket
+
+[climate-badge]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/badges/gpa.svg
+[climate]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js
+
+[coverage-badge]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/badges/coverage.svg
+[coverage]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/coverage
