@@ -41,6 +41,10 @@
   },
   "jest": {
     "coverageDirectory": "./coverage/",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/", 
+      "/src/tests/"
+    ],
     "collectCoverage": true
   },
   "main": "./dist/NodeSocket.js"
