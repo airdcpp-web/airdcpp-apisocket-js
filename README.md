@@ -108,5 +108,5 @@ Examples require a recent version of nodejs and [AirDC++ Web Client](https://air
 [climate-badge]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/badges/gpa.svg
 [climate]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js
 
-[coverage-badge]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/badges/coverage.svg
-[coverage]: https://codeclimate.com/github/airdcpp-web/airdcpp-apisocket-js/coverage
+[coverage-badge]: https://codecov.io/gh/airdcpp-web/airdcpp-apisocket-js/branch/master/graph/badge.svg
+[coverage]: https://codecov.io/gh/airdcpp-web/airdcpp-apisocket-js
