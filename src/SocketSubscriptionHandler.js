@@ -4,11 +4,11 @@ import { EventEmitter } from 'events';
 
 const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] }) => {
 	// Internal
-	const getSubscribtionId = (event, id) => {
+	const getSubscriptionId = (event, id) => {
 		return id ? (event + id) : event;
 	};
 
-	const getSubscribtionUrl = (moduleUrl, id, event) => {
+	const getSubscriptionUrl = (moduleUrl, id, event) => {
 		if (id) {
 			return moduleUrl + '/' + id + '/listener/' + event;
 		}
@@ -45,7 +45,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	// Listen to a specific event without sending subscription to the server
 	socket.addLocalListener = (event, callback, id) => {
-		const subscriptionId = getSubscribtionId(event, id);
+		const subscriptionId = getSubscriptionId(event, id);
 		emitter.on(subscriptionId, callback);
 		return () => removeLocalListener(subscriptionId, callback); 
 	};
@@ -56,12 +56,12 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 			throw 'Listeners can be only for a connected socket';
 		}
 
-		var subscriptionId = getSubscribtionId(event, entityId);
-		var subscriptionUrl = getSubscribtionUrl(apiModuleUrl, entityId, event);
+		const subscriptionId = getSubscriptionId(event, entityId);
+		const subscriptionUrl = getSubscriptionUrl(apiModuleUrl, entityId, event);
 
 		emitter.on(subscriptionId, callback);
 
-		var listeners = subscriptions[subscriptionId];
+		const listeners = subscriptions[subscriptionId];
 		if (!listeners) {
 			subscriptions[subscriptionId] = 0;
 
@@ -72,6 +72,10 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		subscriptions[subscriptionId]++;
 
 		return (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
+	};
+
+	socket.hasListeners = () => {
+		return emitter.listenerCount > 0 || Object.keys(subscriptions).length > 0;
 	};
 
 	// For the socket
@@ -91,7 +95,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 				emitter.emit(message.event + message.id, message.data, message.id);
 			}
 
-			emitter.emit(message.event, message.data, message.id);
+			emitter.emit(message.event, message.data);
 		},
 	};
 

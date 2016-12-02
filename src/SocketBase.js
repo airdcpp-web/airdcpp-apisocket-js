@@ -177,7 +177,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 	// Is the socket connected but not possibly authorized?
 	const isConnected = () => {
-		return ws && ws.readyState === ws.OPEN;
+		return ws && ws.readyState === (ws.OPEN || 1) ? true : false;
 	};
 
 	// Is the socket connected and authorized?
@@ -186,12 +186,12 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 	};
 
 	// Disconnects the socket but keeps the session token
-	const disconnect = () => {
+	const disconnect = (autoConnect = false) => {
 		if (!ws) {
 			return;
 		}
 
-		disconnected = true;
+		disconnected = !autoConnect;
 		logger.info('Disconnecting socket');
 		clearTimeout(reconnectTimer);
 
@@ -234,11 +234,10 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 					logger.info('Logout succeed');
 					authToken = null;
 
-					// Try to avoid cases when the disconnected event is fired before
-					// resolver actions are completed
-					setTimeout(disconnect);
-
 					resolver.resolve(data);
+
+					// Don't fire the disconnected event before resolver actions are handled
+					disconnect();
 				})
 				.catch((error) => {
 					logger.error('Logout failed', error);

@@ -88,6 +88,10 @@ const SocketRequestHandler = (socket, logger, options) => {
 		return sendRequest(path, null, 'GET');
 	};
 
+	socket.getPendingRequestCount = () => {
+		return Object.keys(callbacks).length;
+	};
+
 	// Shared for the socket
 	return {
 		onSocketDisconnected() {
