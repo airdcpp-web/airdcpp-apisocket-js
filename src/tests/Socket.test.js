@@ -136,7 +136,7 @@ describe('socket', () => {
 			server.send(JSON.stringify(commonData));
 			server.send(JSON.stringify(entityData));
 
-			expect(commonSubscriptionCallback).toHaveBeenCalledWith(commonData.data);
+			expect(commonSubscriptionCallback).toHaveBeenCalledWith(commonData.data, undefined);
 			expect(entitySubscriptionCallback).toHaveBeenCalledWith(commonData.data, entityId);
 
 			expect(commonSubscriptionCallback.mock.calls.length).toBe(2);

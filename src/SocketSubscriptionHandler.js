@@ -95,7 +95,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 				emitter.emit(message.event + message.id, message.data, message.id);
 			}
 
-			emitter.emit(message.event, message.data);
+			emitter.emit(message.event, message.data, message.id);
 		},
 	};
 
