@@ -12,10 +12,16 @@ const getConnectedSocket = async () => {
 };
 
 describe('socket', () => {
+	const originalWarn = console.warn;
+	const originalError = console.error;
+
 	beforeEach(() => {
 		server = getMockServer();
 		console.warn = jest.fn((a1, a2, a3, a4) => {
-			console.log(a1, a2, a3, a4);
+			originalWarn(a1, a2, a3, a4);
+		});
+		console.error = jest.fn((a1, a2, a3, a4) => {
+			originalError(a1, a2, a3, a4);
 		});
 	});
 
@@ -87,8 +93,15 @@ describe('socket', () => {
 
 			socket.disconnect(true);
 			expect(socket.isConnected()).toEqual(false);
-			server.addDataHandler('session/v0/socket', null);
 
+			// Let it fail once
+			server.stop();
+			jest.runOnlyPendingTimers();
+			jest.runOnlyPendingTimers();
+			expect(console.error.mock.calls.length).toBe(1);
+
+			server = getMockServer();
+			server.addDataHandler('session/v0/socket', null);
 			jest.runAllTimers();
 
 			expect(socket.isReady()).toEqual(true);
@@ -145,22 +158,22 @@ describe('socket', () => {
 			expect(console.warn.mock.calls.length).toBe(0);
 		});
 
-		test('should handle event listeners with duplicate IDs', async () => {
+		test('should handle listener removal', async () => {
 			const socket = await getConnectedSocket();
-			server.addDataHandler('hubs/v0/listener/hub_updated', null);
 
-			const commonSubscriptionCallback = jest.fn();
-			await socket.addSocketListener('hubs/v0', 'hub_updated', commonSubscriptionCallback);
+			const removeListener1 = await socket.addSocketListener('hubs/v0', 'hub_updated', _ => {});
+			const removeListener2 = await socket.addSocketListener('hubs/v0', 'hub_updated', _ => {});
 
-			const dupeMockCallback = jest.fn(); 
-			const removeDupeListener = await socket.addSocketListener('hubs/v0', 'hub_updated', dupeMockCallback);
+			const deleteCallback = jest.fn();
+			server.addDataHandler('hubs/v0/listener/hub_updated', null, deleteCallback);
 
-			server.send(JSON.stringify(commonData));
-			removeDupeListener();
-			server.send(JSON.stringify(commonData));
+			removeListener1();
+			expect(deleteCallback.mock.calls.length).toBe(0);
 
-			expect(commonSubscriptionCallback.mock.calls.length).toBe(2);
-			expect(dupeMockCallback.mock.calls.length).toBe(1);
+			removeListener2();
+			expect(deleteCallback.mock.calls.length).toBe(1);
+
+			expect(socket.hasListeners()).toBe(false);
 
 			expect(console.warn.mock.calls.length).toBe(0);
 		});

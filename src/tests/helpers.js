@@ -33,13 +33,17 @@ const getSocket = (options = {}) => {
 const getMockServer = () => {
 	const mockServer = new Server('ws://' + defaultOptions.url);
 
-	const addServerHandler = (path, responseData) => {
+	const addServerHandler = (path, responseData, callback) => {
 		const handler = (jsonRequest) => {
 			const requestObj = JSON.parse(jsonRequest);
 
 			if (requestObj.path !== path) {
 				console.log(requestObj, requestObj.path, path);
 				return;
+			}
+
+			if (callback) {
+				callback(requestObj);
 			}
 
 			const response = {
@@ -53,20 +57,20 @@ const getMockServer = () => {
 		mockServer.addEventListener('message', handler);
 	};
 
-	mockServer.addErrorHandler = (path, errorStr, errorCode) => {
+	mockServer.addErrorHandler = (path, errorStr, errorCode, callback) => {
 		addServerHandler(path, {
 			error: {
 				message: errorStr,
 			},
 			code: errorCode,
-		});
+		}, callback);
 	};
 
-	mockServer.addDataHandler = (path, data) => {
+	mockServer.addDataHandler = (path, data, callback) => {
 		addServerHandler(path, {
 			data,
 			code: 200,
-		});
+		}, callback);
 	};
 
 	return mockServer;
