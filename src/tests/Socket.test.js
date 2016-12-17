@@ -41,6 +41,7 @@ describe('socket', () => {
 			expect(socket.isReady()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(0);
+			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
 		test('should handle invalid credentials', async () => {
@@ -60,6 +61,7 @@ describe('socket', () => {
 			expect(socket.isConnected()).toEqual(false);
 
 			expect(console.warn.mock.calls.length).toBe(1);
+			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
 		test('should handle logout', async () => {
@@ -82,6 +84,7 @@ describe('socket', () => {
 			expect(socket.getPendingRequestCount()).toEqual(0);
 
 			expect(console.warn.mock.calls.length).toBe(0);
+			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 	});
 
@@ -106,6 +109,7 @@ describe('socket', () => {
 
 			expect(socket.isReady()).toEqual(true);
 			expect(console.warn.mock.calls.length).toBe(0);
+			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
 		test('should handle manual reconnect', async () => {
@@ -119,6 +123,26 @@ describe('socket', () => {
 			expect(socket.isReady()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(0);
+			expect(socket.getPendingRequestCount()).toBe(0);
+		});
+
+		test('should re-authenticate on lost session', async () => {
+			const socket = await getConnectedSocket();
+
+			jest.useFakeTimers();
+			socket.disconnect();
+			expect(socket.isConnected()).toEqual(false);
+
+			server.addErrorHandler('session/v0/socket', 'Invalid session token', 400);
+			jest.runAllTimers();
+
+			socket.reconnect();
+			jest.runAllTimers();
+
+			expect(socket.isReady()).toEqual(true);
+
+			expect(console.warn.mock.calls.length).toBe(1);
+			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 	});
 
