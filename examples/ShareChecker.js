@@ -39,105 +39,108 @@ const checkConnectingUsers = true;
 
 
 const ApiSocket = require('../');
+const Utils = require('./utils');
 
 const socket = ApiSocket(require('./settings'));
 
 
-const formatResultPaths = (results) => {
-	const paths = results.reduce((reduced, result) => {
-		reduced.push(result.path);
-		return reduced;
-	}, []);
-
-	return paths.join(', ');
-};
-
-const onUserResultsReceived = (user, item, results) => {
-	if (results.length === 0) {
-		return;
-	}
-
-	// Notify the user
-	// Forbidden item(s) found from share: ISO file(s) over 500 MB (example: /Linux/Ubuntu 15.04.iso)
-	socket.post('private_chat/v0/message', {
-		user: user,
-		text: 'Forbidden item(s) found from share: ' + item.description + ' (' + formatResultPaths(results) + ')'
-	});
-
-	// Show a status message in that particular hub
-	// [100]MrFastSpeed: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
-	socket.post('hubs/v0/status', {
-		hub_urls: [ user.hub_url ],
-		text: user.nick + ': ' + item.description + ' (' + formatResultPaths(results) + ')',
-		severity: 'info',
-	});
-};
-
-const onUserSearchFailed = (user, item, error) => {
-	// Most likely the search timed out
-
-	// All clients don't support sending a "no results" status for direct searches, ignore the errors for them
-	if (user.flags.indexOf('asch') === -1) {
-		return;
-	}
-
-	// Report it in order to be able detect bugs and connectivity issues
-	socket.post('hubs/v0/status', {
-		hub_urls: [ user.hub_url ],
-		text: user.nick + ': ' + error.message,
-		severity: 'warning',
-	});
-};
-
-const onUserConnected = (user) => {
-	// Direct search is only support in ADC hubs
-	if (user.flags.indexOf('nmdc') !== -1) {
-		return;
-	}
-
-	// Perform searches
-	searchItems.forEach((item) => {
-		socket.post('search/v0/query/user', {
-			user: user,
-			query: item.query
-		})
-			.then(onUserResultsReceived.bind(this, user, item))
-			.catch(onUserSearchFailed.bind(this, user, item));
-	});
-};
-
-const onShareResultsReceived = (item, results) => {
-	if (results.length === 0) {
-		return;
-	}
-
-	// Show an event message
-	// Forbidden item found from own share: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
-	socket.post('events/v0/message', {
-		text: 'Forbidden item found from own share' + ': ' + item.description + ' (' + formatResultPaths(results) + ')',
-		severity: 'warning',
-	});
-};
-
-const searchOwnShare = () => {
-	searchItems.forEach((item) => {
-		socket.post('search/v0/query/share', {
-			query: item.query,
-			share_profile: undefined // Search from all profiles
-		})
-			.then(onShareResultsReceived.bind(this, item));
-	});
-};
-
 socket.onConnected = () => {
 	if (checkConnectingUsers) {
-		socket.addSocketListener('hubs/v0', 'hub_user_connected', onUserConnected);
+		socket.addSocketListener('hubs', 'hub_user_connected', onUserConnected);
 	}
 
 	if (checkOwnShare) {
 		// Check own share on every connect
 		searchOwnShare();
 	}
+};
+
+const onUserConnected = (user) => {
+	// Direct search is support only in ADC hubs
+	if (user.flags.indexOf('nmdc') !== -1 || user.flags.indexOf('me') !== -1) {
+		return;
+	}
+
+	// Perform search for every item
+	searchItems.forEach(async (item) => {
+		// Get a new instance
+		const instance = await socket.post('search/instance');
+
+		// Post the search
+		await socket.post(`search/instance/${instance.id}/user_search`, {
+			user: user,
+			query: item.query
+		});
+
+		// Wait for the results to arrive
+		await Utils.sleep(5000);
+
+		// Get the best results
+		const results = await socket.get(`search/instance/${instance.id}/results/0/10`);
+
+		// Report
+		if (results.length > 0) {
+			const paths = results.map(result => {
+				return result.path;
+			}, []);
+
+			reportUserResults(user, item, paths);
+		}
+
+		// Preserve resources
+		socket.delete(`search/instance/${instance.id}`);
+	});
+};
+
+const reportUserResults = (user, item, results) => {
+	// Notify the user
+	// Forbidden item(s) found from share: ISO file(s) over 500 MB (example: /Linux/Ubuntu 15.04.iso)
+	socket.post('private_chat/chat_message', {
+		user: user,
+		text: `Forbidden item(s) found from share: ${item.description} (${formatResultPaths(results)})`,
+	});
+
+	// Show a status message in that particular hub
+	// [100]MrFastSpeed: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
+	socket.post('hubs/status_message', {
+		hub_urls: [ user.hub_url ],
+		text: `${user.nick}: ${item.description} (${formatResultPaths(results)})`,
+		severity: 'info',
+	});
+};
+
+const searchOwnShare = () => {
+	// Perform search for every item
+	searchItems.forEach(async (item) => {
+		// Share results are returned instantly
+		const results = await socket.post('share/search', {
+			query: item.query,
+			share_profile: undefined // Search from all profiles
+		});
+
+		if (results.length > 0) {
+			const paths = results.map(result => {
+				return result.real_paths;
+			}, []);
+
+			reportShareResults(item, paths);
+		}
+	});
+};
+
+const reportShareResults = (item, results) => {
+	// Show an event message
+	// Forbidden item found from own share: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
+	socket.post('events/message', {
+		text: `Forbidden item found from own share: ${item.description} (${formatResultPaths(results)})`,
+		severity: 'warning',
+	});
+};
+
+
+// UTILS
+const formatResultPaths = (paths) => {
+	return paths.join(', ');
 };
 
 socket.connect();

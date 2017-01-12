@@ -1,6 +1,6 @@
 module.exports = {
 	// API settings
-	url: 'localhost:5600',
+	url: 'localhost:5600/api/v1/',
 	username: 'myusername',
 	password: 'mypassword',
 	secure: false,

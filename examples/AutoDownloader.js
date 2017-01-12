@@ -41,14 +41,56 @@ const intervalMinutes = 5;
 
 
 const ApiSocket = require('../');
+const Utils = require('./utils');
 
 const socket = ApiSocket(require('./settings'));
 
 
 let searchInterval;
-let resultTimeout;
 
-const onResultsReceived = (item, results) => {
+
+socket.onConnected = () => {
+	searchInterval = setInterval(searchItem, intervalMinutes * 60 * 1000);
+
+	// Perform an instant search as well
+	searchItem();
+};
+
+socket.onDisconnected = () => {
+	// We can't search without a socket
+	clearInterval(searchInterval);
+};
+
+const searchItem = async () => {
+	// Get a random item to search for
+	const pos = Math.floor(Math.random() * searchItems.length);
+	const item = searchItems[pos];
+
+	// Create instance
+	const instance = await socket.post('search/instance');
+
+	// Add instance-specific listener for results
+	socket.addSocketListener('search/instance', 'search_hub_searches_sent', onSearchSent.bind(this, item, instance), instance.id);
+
+	// Perform the actual search
+	const searchQueueInfo = await socket.post(`search/instance/${instance.id}/hub_search`, {
+		query: item.query
+	});
+
+	// Show log message for the user
+	socket.post('events/message', {
+		text: 'Auto downloader: the item ' + item.query.pattern + ' was searched for from ' + searchQueueInfo.sent + ' hubs',
+		severity: 'info',
+	});
+};
+
+const onSearchSent = async (item, instance, searchInfo) => {
+	// Collect the results for 5 seconds
+	await Utils.sleep(5000);
+
+	// Get only the first result (results are sorted by relevance)
+	const results = await socket.get(`search/instance/${instance.id}/results/0/1`);
+
 	if (results.length === 0) {
 		// Nothing was found
 		return;
@@ -56,46 +98,7 @@ const onResultsReceived = (item, results) => {
 
 	// Download the result
 	const result = results[0];
-	socket.post('search/v0/result/' + result.id + '/download', item.downloadData);
-};
-
-const onSearchSent = (item, data) => {
-	socket.post('events/v0/message', {
-		text: 'Auto downloader: the item ' + item.query.pattern + ' was searched for from ' + data.sent + ' hubs',
-		severity: 'info',
-	});
-
-	resultTimeout = setTimeout(() => {
-		// Only get the first result (results are sorted by relevancy)
-		socket.get('search/v0/results/0/1')
-			.then(onResultsReceived.bind(this, item));
-
-	}, data.queue_time + 5000); // Collect the results for 5 seconds after the search was sent
-};
-
-const search = () => {
-	// Get a random item to search for
-	const pos = Math.floor(Math.random() * searchItems.length);
-	const item = searchItems[pos];
-
-	// Perform search
-	socket.post('search/v0/query', {
-		query: item.query
-	})
-		.then(onSearchSent.bind(this, item));
-};
-
-socket.onConnected = () => {
-	searchInterval = setInterval(search, intervalMinutes * 60 * 1000);
-
-	// Perform an instant search as well
-	search();
-};
-
-socket.onDisconnected = () => {
-	// We can't search or download without a socket
-	clearInterval(searchInterval);
-	clearTimeout(resultTimeout);
+	socket.post(`search/instance/${instance.id}/result/${result.id}/download`, item.downloadData);
 };
 
 socket.connect();
