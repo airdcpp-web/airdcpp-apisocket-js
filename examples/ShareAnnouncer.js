@@ -56,6 +56,10 @@ const onBundleStatusChanged = (bundle) => {
 		return;
 	}
 
+	if (bundle.type.id === 'file') {
+		return;
+	}
+
 	onDirectoryShared(bundle.name, bundle.size);
 };
 
