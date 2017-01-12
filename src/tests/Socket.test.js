@@ -70,8 +70,8 @@ describe('socket', () => {
 			const socket = await getConnectedSocket();
 
 			// Dummy listener
-			server.addDataHandler('hubs/v0/listener/hub_updated', null);
-			await socket.addSocketListener('hubs/v0', 'hub_updated', _ => {});
+			server.addDataHandler('hubs/listener/hub_updated', null);
+			await socket.addSocketListener('hubs', 'hub_updated', _ => {});
 
 			// Dummy pending request
 			socket.delete('dummy').catch(error => {
@@ -106,7 +106,7 @@ describe('socket', () => {
 			expect(console.error.mock.calls.length).toBe(1);
 
 			server = getMockServer();
-			server.addDataHandler('session/v0/socket', null);
+			server.addDataHandler('session/socket', null);
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
 
@@ -121,7 +121,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addDataHandler('session/v0/socket', null);
+			server.addDataHandler('session/socket', null);
 			await socket.reconnect();
 			expect(socket.isReady()).toEqual(true);
 
@@ -136,7 +136,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addErrorHandler('session/v0/socket', 'Invalid session token', 400);
+			server.addErrorHandler('session/socket', 'Invalid session token', 400);
 			jest.runOnlyPendingTimers();
 
 			socket.reconnect();
@@ -182,13 +182,13 @@ describe('socket', () => {
 
 		test('should handle listener messages', async () => {
 			const socket = await getConnectedSocket();
-			server.addDataHandler('hubs/v0/listener/hub_updated', null);
+			server.addDataHandler('hubs/listener/hub_updated', null);
 
 			const commonSubscriptionCallback = jest.fn();
 			const entitySubscriptionCallback = jest.fn();
 
-			await socket.addSocketListener('hubs/v0', 'hub_updated', commonSubscriptionCallback);
-			await socket.addSocketListener('hubs/v0', 'hub_updated', entitySubscriptionCallback, entityId);
+			await socket.addSocketListener('hubs', 'hub_updated', commonSubscriptionCallback);
+			await socket.addSocketListener('hubs', 'hub_updated', entitySubscriptionCallback, entityId);
 
 			server.send(JSON.stringify(commonData));
 			server.send(JSON.stringify(entityData));
@@ -205,11 +205,11 @@ describe('socket', () => {
 		test('should handle listener removal', async () => {
 			const socket = await getConnectedSocket();
 
-			const removeListener1 = await socket.addSocketListener('hubs/v0', 'hub_updated', _ => {});
-			const removeListener2 = await socket.addSocketListener('hubs/v0', 'hub_updated', _ => {});
+			const removeListener1 = await socket.addSocketListener('hubs', 'hub_updated', _ => {});
+			const removeListener2 = await socket.addSocketListener('hubs', 'hub_updated', _ => {});
 
 			const deleteCallback = jest.fn();
-			server.addDataHandler('hubs/v0/listener/hub_updated', null, deleteCallback);
+			server.addDataHandler('hubs/listener/hub_updated', null, deleteCallback);
 
 			removeListener1();
 			expect(deleteCallback.mock.calls.length).toBe(0);

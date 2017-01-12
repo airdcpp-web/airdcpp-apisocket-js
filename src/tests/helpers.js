@@ -5,7 +5,7 @@ import { WebSocket, Server } from 'mock-socket';
 const defaultOptions = {
 	username: 'test',
 	password: 'test',
-	url: 'localhost:7171',
+	url: 'localhost:7171/api/v1/',
 };
 
 const authData = {
@@ -20,7 +20,7 @@ const authData = {
 	user: 'test',
 };
 
-const authPath = 'session/v0/auth';
+const authPath = 'session/auth';
 
 const getSocket = (options = {}) => {
 	const socket = SocketBase({
