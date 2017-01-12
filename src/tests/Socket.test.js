@@ -1,4 +1,5 @@
 import { authData, authPath, getMockServer, getSocket } from './helpers';
+import MockDate from 'mockdate';
 
 let server;
 
@@ -28,6 +29,7 @@ describe('socket', () => {
 	afterEach(() => {
 		server.stop();
 		jest.useRealTimers();
+		MockDate.reset();
 	});
 
 	describe('auth', () => {
@@ -105,7 +107,8 @@ describe('socket', () => {
 
 			server = getMockServer();
 			server.addDataHandler('session/v0/socket', null);
-			jest.runAllTimers();
+			jest.runOnlyPendingTimers();
+			jest.runOnlyPendingTimers();
 
 			expect(socket.isReady()).toEqual(true);
 			expect(console.warn.mock.calls.length).toBe(0);
@@ -134,15 +137,32 @@ describe('socket', () => {
 			expect(socket.isConnected()).toEqual(false);
 
 			server.addErrorHandler('session/v0/socket', 'Invalid session token', 400);
-			jest.runAllTimers();
+			jest.runOnlyPendingTimers();
 
 			socket.reconnect();
-			jest.runAllTimers();
+			jest.runOnlyPendingTimers();
 
 			expect(socket.isReady()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(1);
 			expect(socket.getPendingRequestCount()).toBe(0);
+		});
+	});
+
+	describe('requests', () => {
+		test('should report request timeouts', async () => {
+			const socket = await getConnectedSocket();
+
+			jest.useFakeTimers();
+			socket.addSocketListener('hubs', 'hub_updated', _ => {});
+			socket.addSocketListener('hubs', 'hub_added', _ => {});
+
+			jest.runTimersToTime(35000);
+
+			MockDate.set(Date.now() + 35000);
+			socket.reportRequestTimeouts();
+
+			expect(console.warn.mock.calls.length).toBe(2);
 		});
 	});
 

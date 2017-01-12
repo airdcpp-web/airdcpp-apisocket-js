@@ -14,6 +14,7 @@ const defaultOptions = {
 	autoReconnect: true,
 	reconnectInterval: 10,
 	userSession: false,
+	requestTimeout: 30,
 };
 
 const ApiSocket = (userOptions, WebSocketImpl) => {

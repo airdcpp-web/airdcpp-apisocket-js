@@ -37,13 +37,14 @@
     "eslint-plugin-babel": "^4.0.0",
     "jest-cli": "^18.0.0",
     "mock-socket": "^6.0.1",
+    "mockdate": "^2.0.1",
     "rimraf": "^2.5.2"
   },
   "jest": {
     "coverageDirectory": "./coverage/",
     "coveragePathIgnorePatterns": [
       "/dist/",
-      "/node_modules/", 
+      "/node_modules/",
       "/src/tests/"
     ],
     "collectCoverage": true
