@@ -1,5 +1,5 @@
 export default {
-	LOGIN_URL:	'session/auth',
-	LOGOUT_URL: 'session/auth',
-	CONNECT_URL:	'session/socket',
+	LOGIN_URL:	'sessions/authorize',
+	CONNECT_URL:	'sessions/socket',
+	LOGOUT_URL: 'sessions/self',
 };

@@ -64,10 +64,10 @@ const onUserConnected = (user) => {
 	// Perform search for every item
 	searchItems.forEach(async (item) => {
 		// Get a new instance
-		const instance = await socket.post('search/instance');
+		const instance = await socket.post('search/instances');
 
 		// Post the search
-		await socket.post(`search/instance/${instance.id}/user_search`, {
+		await socket.post(`search/instances/${instance.id}/user_search`, {
 			user: user,
 			query: item.query
 		});
@@ -76,7 +76,7 @@ const onUserConnected = (user) => {
 		await Utils.sleep(5000);
 
 		// Get the best results
-		const results = await socket.get(`search/instance/${instance.id}/results/0/10`);
+		const results = await socket.get(`search/instances/${instance.id}/results/0/10`);
 
 		// Report
 		if (results.length > 0) {
@@ -85,7 +85,7 @@ const onUserConnected = (user) => {
 		}
 
 		// Preserve resources
-		socket.delete(`search/instance/${instance.id}`);
+		socket.delete(`search/instances/${instance.id}`);
 	});
 };
 
@@ -125,7 +125,7 @@ const searchOwnShare = () => {
 const reportShareResults = (item, results) => {
 	// Show an event message
 	// Forbidden item found from own share: ISO file(s) over 500 MB (/Linux/Ubuntu 15.04.iso)
-	socket.post('events/message', {
+	socket.post('events', {
 		text: `Forbidden item found from own share: ${item.description} (${formatResultPaths(results)})`,
 		severity: 'warning',
 	});

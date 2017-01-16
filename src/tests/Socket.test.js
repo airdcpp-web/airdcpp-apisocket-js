@@ -107,7 +107,7 @@ describe('socket', () => {
 			expect(console.error.mock.calls.length).toBe(1);
 
 			server = getMockServer();
-			server.addDataHandler('POST', 'session/socket', null);
+			server.addDataHandler('POST', ApiConstants.CONNECT, null);
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
 
@@ -122,7 +122,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addDataHandler('POST', 'session/socket', null);
+			server.addDataHandler('POST', ApiConstants.CONNECT, null);
 			await socket.reconnect();
 			expect(socket.isReady()).toEqual(true);
 
@@ -137,7 +137,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addErrorHandler('POST', 'session/socket', 'Invalid session token', 400);
+			server.addErrorHandler('POST', ApiConstants.CONNECT, 'Invalid session token', 400);
 			jest.runOnlyPendingTimers();
 
 			socket.reconnect();

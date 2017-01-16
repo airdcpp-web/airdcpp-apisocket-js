@@ -67,18 +67,18 @@ const searchItem = async () => {
 	const item = searchItems[pos];
 
 	// Create instance
-	const instance = await socket.post('search/instance');
+	const instance = await socket.post('search/instances');
 
 	// Add instance-specific listener for results
-	socket.addSocketListener('search/instance', 'search_hub_searches_sent', onSearchSent.bind(this, item, instance), instance.id);
+	socket.addSocketListener('search/instances', 'search_hub_searches_sent', onSearchSent.bind(this, item, instance), instance.id);
 
 	// Perform the actual search
-	const searchQueueInfo = await socket.post(`search/instance/${instance.id}/hub_search`, {
+	const searchQueueInfo = await socket.post(`search/instances/${instance.id}/hub_search`, {
 		query: item.query
 	});
 
 	// Show log message for the user
-	socket.post('events/message', {
+	socket.post('events', {
 		text: `Auto downloader: the item ${item.query.pattern} was searched for from ${searchQueueInfo.sent} hubs`,
 		severity: 'info',
 	});
@@ -89,7 +89,7 @@ const onSearchSent = async (item, instance, searchInfo) => {
 	await Utils.sleep(5000);
 
 	// Get only the first result (results are sorted by relevance)
-	const results = await socket.get(`search/instance/${instance.id}/results/0/1`);
+	const results = await socket.get(`search/instances/${instance.id}/results/0/1`);
 
 	if (results.length === 0) {
 		// Nothing was found
@@ -98,7 +98,7 @@ const onSearchSent = async (item, instance, searchInfo) => {
 
 	// Download the result
 	const result = results[0];
-	socket.post(`search/instance/${instance.id}/result/${result.id}/download`, item.downloadData);
+	socket.post(`search/instances/${instance.id}/results/${result.id}/download`, item.downloadData);
 };
 
 socket.connect();
