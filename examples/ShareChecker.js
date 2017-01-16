@@ -46,7 +46,7 @@ const socket = ApiSocket(require('./settings'));
 
 socket.onConnected = () => {
 	if (checkConnectingUsers) {
-		socket.addSocketListener('hubs', 'hub_user_connected', onUserConnected);
+		socket.addListener('hubs', 'hub_user_connected', onUserConnected);
 	}
 
 	if (checkOwnShare) {

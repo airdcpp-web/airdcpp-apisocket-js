@@ -32,7 +32,7 @@ var onUserConnected = function(user) {
 };
 
 socket.onConnected = function() {
-	socket.addSocketListener('hubs', 'hub_user_connected', onUserConnected);
+	socket.addListener('hubs', 'hub_user_connected', onUserConnected);
 };
 
 socket.connect();

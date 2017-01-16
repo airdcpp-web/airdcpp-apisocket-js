@@ -72,7 +72,7 @@ describe('socket', () => {
 
 			// Dummy listener
 			server.addDataHandler('POST', 'hubs/listener/hub_updated', null);
-			await socket.addSocketListener('hubs', 'hub_updated', _ => {});
+			await socket.addListener('hubs', 'hub_updated', _ => {});
 
 			// Dummy pending request
 			socket.delete('dummy').catch(error => {
@@ -107,7 +107,8 @@ describe('socket', () => {
 			expect(console.error.mock.calls.length).toBe(1);
 
 			server = getMockServer();
-			server.addDataHandler('POST', ApiConstants.CONNECT, null);
+			console.error(ApiConstants.CONNECT_URL);
+			server.addDataHandler('POST', ApiConstants.CONNECT_URL, null);
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
 
@@ -122,7 +123,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addDataHandler('POST', ApiConstants.CONNECT, null);
+			server.addDataHandler('POST', ApiConstants.CONNECT_URL, null);
 			await socket.reconnect();
 			expect(socket.isReady()).toEqual(true);
 
@@ -137,7 +138,7 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
-			server.addErrorHandler('POST', ApiConstants.CONNECT, 'Invalid session token', 400);
+			server.addErrorHandler('POST', ApiConstants.CONNECT_URL, 'Invalid session token', 400);
 			jest.runOnlyPendingTimers();
 
 			socket.reconnect();
@@ -155,8 +156,8 @@ describe('socket', () => {
 			const socket = await getConnectedSocket();
 
 			jest.useFakeTimers();
-			socket.addSocketListener('hubs', 'hub_updated', _ => {});
-			socket.addSocketListener('hubs', 'hub_added', _ => {});
+			socket.addListener('hubs', 'hub_updated', _ => {});
+			socket.addListener('hubs', 'hub_added', _ => {});
 
 			jest.runTimersToTime(35000);
 
@@ -189,8 +190,8 @@ describe('socket', () => {
 			const commonSubscriptionCallback = jest.fn();
 			const entitySubscriptionCallback = jest.fn();
 
-			await socket.addSocketListener('hubs', 'hub_updated', commonSubscriptionCallback);
-			await socket.addSocketListener('hubs/session', 'hub_updated', entitySubscriptionCallback, entityId);
+			await socket.addListener('hubs', 'hub_updated', commonSubscriptionCallback);
+			await socket.addListener('hubs/session', 'hub_updated', entitySubscriptionCallback, entityId);
 
 			server.send(JSON.stringify(commonData));
 			server.send(JSON.stringify(entityData));
@@ -210,8 +211,8 @@ describe('socket', () => {
 			const subscribeCallback = jest.fn();
 			server.addDataHandler('POST', 'hubs/listener/hub_updated', null, subscribeCallback);
 
-			const removeListener1 = await socket.addSocketListener('hubs', 'hub_updated', _ => {});
-			const removeListener2 = await socket.addSocketListener('hubs', 'hub_updated', _ => {});
+			const removeListener1 = await socket.addListener('hubs', 'hub_updated', _ => {});
+			const removeListener2 = await socket.addListener('hubs', 'hub_updated', _ => {});
 			expect(subscribeCallback.mock.calls.length).toBe(1);
 
 			const deleteCallback = jest.fn();

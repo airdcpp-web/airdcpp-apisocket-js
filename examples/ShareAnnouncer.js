@@ -35,11 +35,11 @@ const socket = ApiSocket(require('./settings'));
 socket.onConnected = () => {
 	// Add listeners
 	if (announceHashed) {
-		socket.addSocketListener('hash', 'hasher_directory_finished', onDirectoryHashed);
+		socket.addListener('hash', 'hasher_directory_finished', onDirectoryHashed);
 	}
 
 	if (announceBundles) {
-		socket.addSocketListener('queue', 'queue_bundle_status', onBundleStatusChanged);
+		socket.addListener('queue', 'queue_bundle_status', onBundleStatusChanged);
 	}
 };
 

@@ -51,7 +51,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	};
 
 	// Listen to a specific event and manage the API subscription automatically
-	socket.addSocketListener = (apiModuleUrl, event, callback, entityId) => {
+	socket.addListener = (apiModuleUrl, event, callback, entityId) => {
 		if (!socket.isReady()) {
 			throw 'Listeners can be only for a connected socket';
 		}
