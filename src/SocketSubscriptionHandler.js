@@ -44,8 +44,8 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	// Public
 
 	// Listen to a specific event without sending subscription to the server
-	socket.addLocalListener = (event, callback, id) => {
-		const subscriptionId = getSubscriptionId(event, id);
+	socket.addViewUpdateListener = (viewName, callback, id) => {
+		const subscriptionId = getSubscriptionId(viewName + '_updated', id);
 		emitter.on(subscriptionId, callback);
 		return () => removeLocalListener(subscriptionId, callback); 
 	};

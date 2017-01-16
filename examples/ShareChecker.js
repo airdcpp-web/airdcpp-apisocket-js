@@ -56,7 +56,7 @@ socket.onConnected = () => {
 };
 
 const onUserConnected = (user) => {
-	// Direct search is support only in ADC hubs
+	// Direct search is supported only in ADC hubs
 	if (user.flags.indexOf('nmdc') !== -1 || user.flags.indexOf('me') !== -1) {
 		return;
 	}
@@ -80,10 +80,7 @@ const onUserConnected = (user) => {
 
 		// Report
 		if (results.length > 0) {
-			const paths = results.map(result => {
-				return result.path;
-			}, []);
-
+			const paths = results.map(result => result.path, []);
 			reportUserResults(user, item, paths);
 		}
 
@@ -119,10 +116,7 @@ const searchOwnShare = () => {
 		});
 
 		if (results.length > 0) {
-			const paths = results.map(result => {
-				return result.real_paths;
-			}, []);
-
+			const paths = results.map(result => result.real_paths, []);
 			reportShareResults(item, paths);
 		}
 	});

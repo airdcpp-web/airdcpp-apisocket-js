@@ -20,8 +20,6 @@ const authData = {
 	user: 'test',
 };
 
-const authPath = 'session/auth';
-
 const getSocket = (options = {}) => {
 	const socket = SocketBase({
 		...defaultOptions,
@@ -33,12 +31,12 @@ const getSocket = (options = {}) => {
 const getMockServer = () => {
 	const mockServer = new Server('ws://' + defaultOptions.url);
 
-	const addServerHandler = (path, responseData, callback) => {
+	const addServerHandler = (method, path, responseData, callback) => {
 		const handler = (jsonRequest) => {
 			const requestObj = JSON.parse(jsonRequest);
 
-			if (requestObj.path !== path) {
-				console.log(requestObj, requestObj.path, path);
+			if (requestObj.path !== path || requestObj.method !== method) {
+				//console.log(requestObj, requestObj.path, path);
 				return;
 			}
 
@@ -57,8 +55,8 @@ const getMockServer = () => {
 		mockServer.addEventListener('message', handler);
 	};
 
-	mockServer.addErrorHandler = (path, errorStr, errorCode, callback) => {
-		addServerHandler(path, {
+	mockServer.addErrorHandler = (method, path, errorStr, errorCode, callback) => {
+		addServerHandler(method, path, {
 			error: {
 				message: errorStr,
 			},
@@ -66,8 +64,8 @@ const getMockServer = () => {
 		}, callback);
 	};
 
-	mockServer.addDataHandler = (path, data, callback) => {
-		addServerHandler(path, {
+	mockServer.addDataHandler = (method, path, data, callback) => {
+		addServerHandler(method, path, {
 			data,
 			code: 200,
 		}, callback);
@@ -76,4 +74,4 @@ const getMockServer = () => {
 	return mockServer;
 };
 
-export { authPath, authData, getMockServer, getSocket };
+export { authData, getMockServer, getSocket };
