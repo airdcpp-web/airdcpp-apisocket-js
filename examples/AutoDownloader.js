@@ -79,7 +79,7 @@ const searchItem = async () => {
 
 	// Show log message for the user
 	socket.post('events', {
-		text: `Auto downloader: the item ${item.query.pattern} was searched for from ${searchQueueInfo.sent} hubs`,
+		text: `Auto downloader: the item ${item.query.pattern} was searched for from ${searchQueueInfo.queued_count} hubs`,
 		severity: 'info',
 	});
 };
