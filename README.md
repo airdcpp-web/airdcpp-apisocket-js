@@ -2,6 +2,8 @@
 
 Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-webapi).
 
+**NOTE**: this version of airdcpp-apisocket can only be used with an application that supports [AirDC++ Web API v1](http://docs.airdcpp.apiary.io/#introduction/version-history) (AirDC++ Web Client 2.0.0+ / AirDC++ 3.40+). For older versions, please use the [0.1.x branch](https://github.com/airdcpp-web/airdcpp-apisocket-js/tree/0.1.x) instead.
+
 ## Features
 
 - Handles authentication with the API and reconnects in case of failures or when the client is restarted
