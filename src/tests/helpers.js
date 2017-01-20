@@ -16,7 +16,7 @@ const authData = {
 	network_type: 'private',
 	path_separator: '/',
 	platform: 'other',
-	token: 'b823187f-4aab-4b71-9764-e63e88401a26',
+	auth_token: 'b823187f-4aab-4b71-9764-e63e88401a26',
 	user: 'test',
 };
 
