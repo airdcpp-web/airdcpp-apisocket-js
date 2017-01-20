@@ -22,5 +22,9 @@ module.exports = {
 	getLastDirectory: function (fullPath) {
 		const result = fullPath.match(/([^\\\/]+)[\\\/]$/);
 		return result ? result[1] : fullPath;
-	}
+	},
+
+	sleep(ms) {
+		return new Promise(resolve => setTimeout(resolve, ms));
+	},
 };

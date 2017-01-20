@@ -32,11 +32,22 @@ const Utils = require('./utils');
 const socket = ApiSocket(require('./settings'));
 
 
+socket.onConnected = () => {
+	// Add listeners
+	if (announceHashed) {
+		socket.addListener('hash', 'hasher_directory_finished', onDirectoryHashed);
+	}
+
+	if (announceBundles) {
+		socket.addListener('queue', 'queue_bundle_status', onBundleStatusChanged);
+	}
+};
+
 const onDirectoryShared = (name, size) => {
-	// Send a chat message to wanted hubs
-	socket.post('hubs/v0/message', {
+	// Send a chat message to specified hubs
+	socket.post('hubs/chat_message', {
 		hub_urls: hubUrls,
-		text: 'The directory ' + name + ' (' + Utils.formatSize(size) + ') was added in share',
+		text: `The directory ${name} (${Utils.formatSize(size)}) was added in share`,
 	});
 };
 
@@ -45,21 +56,15 @@ const onBundleStatusChanged = (bundle) => {
 		return;
 	}
 
+	if (bundle.type.id === 'file') {
+		return;
+	}
+
 	onDirectoryShared(bundle.name, bundle.size);
 };
 
 const onDirectoryHashed = (directoryInfo) => {
 	onDirectoryShared(Utils.getLastDirectory(directoryInfo.path), directoryInfo.size);
-};
-
-socket.onConnected = () => {
-	if (announceHashed) {
-		socket.addSocketListener('hash/v0', 'hasher_directory_finished', onDirectoryHashed);
-	}
-
-	if (announceBundles) {
-		socket.addSocketListener('queue/v0', 'bundle_status', onBundleStatusChanged);
-	}
 };
 
 socket.connect();

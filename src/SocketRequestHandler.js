@@ -47,7 +47,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 		const callbackId = getCallbackId();
 
 		callbacks[callbackId] = {
-			time: new Date(),
+			time: new Date().getTime(),
 			resolver,
 		};
 
@@ -64,6 +64,22 @@ const SocketRequestHandler = (socket, logger, options) => {
 		return resolver.promise;
 	};
 
+	// Report timed out requests
+	// This is more about spotting backend issues, such as frozen threads and dropped responses
+	// The socket itself should handle actual connection issues
+	const reportTimeouts = () => {
+		const now = new Date().getTime();
+		Object.keys(callbacks).forEach(callbackId => {
+			const request = callbacks[callbackId];
+			if (request.time + (options.requestTimeout * 1000) < now) {
+				logger.warn(`Request ${callbackId} timed out`);
+			}
+		});
+	};
+
+	const timeoutReportInterval = setInterval(reportTimeouts, 30000);
+
+	socket.reportRequestTimeouts = reportTimeouts; // for testing
 
 	// Public
 	socket.put = (path, data) => {
@@ -98,6 +114,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 			// Clear callbacks
 			Object.keys(callbacks).forEach(id => callbacks[id].resolver.reject({ message: 'Socket disconnected' }));
 			callbacks = {};
+			clearTimeout(timeoutReportInterval);
 		},
 
 		handleMessage(messageObj) {

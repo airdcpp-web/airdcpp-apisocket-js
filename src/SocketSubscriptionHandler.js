@@ -44,14 +44,14 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	// Public
 
 	// Listen to a specific event without sending subscription to the server
-	socket.addLocalListener = (event, callback, id) => {
-		const subscriptionId = getSubscriptionId(event, id);
+	socket.addViewUpdateListener = (viewName, callback, id) => {
+		const subscriptionId = getSubscriptionId(viewName + '_updated', id);
 		emitter.on(subscriptionId, callback);
 		return () => removeLocalListener(subscriptionId, callback); 
 	};
 
 	// Listen to a specific event and manage the API subscription automatically
-	socket.addSocketListener = (apiModuleUrl, event, callback, entityId) => {
+	socket.addListener = (apiModuleUrl, event, callback, entityId) => {
 		if (!socket.isReady()) {
 			throw 'Listeners can be only for a connected socket';
 		}

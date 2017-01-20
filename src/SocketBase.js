@@ -14,6 +14,7 @@ const defaultOptions = {
 	autoReconnect: true,
 	reconnectInterval: 10,
 	userSession: false,
+	requestTimeout: 30,
 };
 
 const ApiSocket = (userOptions, WebSocketImpl) => {
@@ -87,7 +88,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 	const handleAuthorize = () => {
 		return socket.post(ApiConstants.CONNECT_URL, { 
-			authorization: authToken,
+			auth_token: authToken,
 		}, true);
 	};
 
@@ -98,7 +99,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 				if (data) {
 					logger.info('Login succeed');
-					authToken = data.token;
+					authToken = data.auth_token;
 				} else {
 					logger.info('Socket associated with an existing session');
 				}

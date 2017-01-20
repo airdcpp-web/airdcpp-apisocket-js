@@ -2,6 +2,8 @@
 
 Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-webapi).
 
+**NOTE**: this version of airdcpp-apisocket can only be used with an application that supports [AirDC++ Web API v1](http://docs.airdcpp.apiary.io/#introduction/version-history) (AirDC++ Web Client 2.0.0+ / AirDC++ 3.40+). For older versions, please use the [0.1.x branch](https://github.com/airdcpp-web/airdcpp-apisocket-js/tree/0.1.x) instead.
+
 ## Features
 
 - Handles authentication with the API and reconnects in case of failures or when the client is restarted
@@ -17,14 +19,14 @@ The example displays a status message in main chat every time a new user joins a
 var ApiSocket = require('airdcpp-apisocket');
 
 var socket = ApiSocket({
-	url: 'localhost:5600',
+	url: 'localhost:5600/api/v1/',
 	username: 'exampleuser',
 	password: 'examplepass'
 });
 
 var onUserConnected = function(user) {
 	// Show a status message in that particular hub
-	socket.post('hubs/v0/status', {
+	socket.post('hubs/status_message', {
 		hub_urls: [ user.hub_url ],
 		text: user.nick + ' joined the hub',
 		severity: 'info'
@@ -32,7 +34,7 @@ var onUserConnected = function(user) {
 };
 
 socket.onConnected = function() {
-	socket.addSocketListener('hubs/v0', 'hub_user_connected', onUserConnected);
+	socket.addListener('hubs', 'hub_user_connected', onUserConnected);
 };
 
 socket.connect();
@@ -86,7 +88,7 @@ The ADC protocol specifications can be found from http://adc.sourceforge.net/ADC
 
 There are a few examples demonstrating how to use the connector in real projects. The examples are simplified and generally not meant for regular use.
 
-Examples require a recent version of nodejs and [AirDC++ Web Client](https://airdcpp-web.github.io) 1.0.0 or newer to work. Please note the [recommended hubsofts to use](#hubsofts) as the examples may not work with all hubsofts.
+Examples require Node.js (version 7 or newer) and [AirDC++ Web Client](https://airdcpp-web.github.io) 2.0.0 or newer to work. Please note the [recommended hubsofts to use](#hubsofts) as the examples may not work with all hubsofts.
 
 1. Clone the repository
 2. Install dependencies and build the project by running the following commands in the main directory
@@ -97,7 +99,7 @@ Examples require a recent version of nodejs and [AirDC++ Web Client](https://air
     ``` 
 3. Create a copy of ``examples/settings.js.example`` and rename it to ``examples/settings.js``
 4. Edit ``examples/settings.js`` to contain the correct API address and user credentials
-5. Run the wanted example with ``node examples/replace_with_example_name.js`` (Debian/Ubuntu users may have to use `nodejs` instead of `node`)
+5. Run the wanted example with ``node --harmony examples/replace_with_example_name.js`` (Debian/Ubuntu users may have to use `nodejs` instead of `node`). The ``--harmony`` flag is currently needed with Node.js 7 due to async/await being used in the examples.
 
 [build-badge]: https://img.shields.io/travis/airdcpp-web/airdcpp-apisocket-js/master.svg?style=flat-square
 [build]: https://travis-ci.org/airdcpp-web/airdcpp-apisocket-js
