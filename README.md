@@ -40,6 +40,10 @@ socket.onConnected = function() {
 socket.connect();
 ```
 
+## API reference
+
+API reference is available at http://apidocs.airdcpp.net
+
 ## Table of contents
 
  * [Getting started](#getting-started)
