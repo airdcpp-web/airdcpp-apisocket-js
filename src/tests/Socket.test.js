@@ -71,7 +71,7 @@ describe('socket', () => {
 			const socket = await getConnectedSocket();
 
 			// Dummy listener
-			server.addDataHandler('POST', 'hubs/listener/hub_updated', null);
+			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null);
 			await socket.addListener('hubs', 'hub_updated', _ => {});
 
 			// Dummy pending request
@@ -184,14 +184,14 @@ describe('socket', () => {
 
 		test('should handle listener messages', async () => {
 			const socket = await getConnectedSocket();
-			server.addDataHandler('POST', 'hubs/listener/hub_updated', null);
-			server.addDataHandler('POST', `hubs/session/${entityId}/listener/hub_updated`, null);
+			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null);
+			server.addDataHandler('POST', `hubs/sessions/${entityId}/listeners/hub_updated`, null);
 
 			const commonSubscriptionCallback = jest.fn();
 			const entitySubscriptionCallback = jest.fn();
 
 			await socket.addListener('hubs', 'hub_updated', commonSubscriptionCallback);
-			await socket.addListener('hubs/session', 'hub_updated', entitySubscriptionCallback, entityId);
+			await socket.addListener('hubs/sessions', 'hub_updated', entitySubscriptionCallback, entityId);
 
 			server.send(JSON.stringify(commonData));
 			server.send(JSON.stringify(entityData));
@@ -209,14 +209,14 @@ describe('socket', () => {
 			const socket = await getConnectedSocket();
 
 			const subscribeCallback = jest.fn();
-			server.addDataHandler('POST', 'hubs/listener/hub_updated', null, subscribeCallback);
+			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null, subscribeCallback);
 
 			const removeListener1 = await socket.addListener('hubs', 'hub_updated', _ => {});
 			const removeListener2 = await socket.addListener('hubs', 'hub_updated', _ => {});
 			expect(subscribeCallback.mock.calls.length).toBe(1);
 
 			const deleteCallback = jest.fn();
-			server.addDataHandler('DELETE', 'hubs/listener/hub_updated', null, deleteCallback);
+			server.addDataHandler('DELETE', 'hubs/listeners/hub_updated', null, deleteCallback);
 
 			removeListener1();
 			expect(deleteCallback.mock.calls.length).toBe(0);
@@ -245,7 +245,7 @@ describe('socket', () => {
 
 	describe('hooks', () => {
 		const hookEventData = {
-			event: 'queue_bundle_finished',
+			event: 'queue_bundle_finished_hook',
 			data: {},
 			completion_id: 1,
 		};
@@ -266,9 +266,9 @@ describe('socket', () => {
 			// Add hook
 			{
 				const hookAddCallback = jest.fn();
-				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished', null, hookAddCallback);
+				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished_hook', null, hookAddCallback);
 
-				removeListener = socket.addHook('queue', 'queue_bundle_finished', rejectCallback, hookSubscriberInfo);
+				removeListener = socket.addHook('queue', 'queue_bundle_finished_hook', rejectCallback, hookSubscriberInfo);
 
 				expect(hookAddCallback.mock.calls.length).toBe(1);
 			}
@@ -276,7 +276,7 @@ describe('socket', () => {
 			// Simulate action
 			{
 				const hookEventCallback = jest.fn();
-				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished/1/reject', null, hookEventCallback);
+				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished_hook/1/reject', null, hookEventCallback);
 				server.send(JSON.stringify(hookEventData));
 				expect(hookEventCallback.mock.calls.length).toBe(1);
 			}

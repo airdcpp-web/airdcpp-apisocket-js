@@ -10,10 +10,10 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	const getSubscriptionUrl = (moduleUrl, id, event) => {
 		if (id) {
-			return moduleUrl + '/' + id + '/listener/' + event;
+			return moduleUrl + '/' + id + '/listeners/' + event;
 		}
 
-		return moduleUrl + '/listener/' + event;
+		return moduleUrl + '/listeners/' + event;
 	};
 
 	let subscriptions = {};
