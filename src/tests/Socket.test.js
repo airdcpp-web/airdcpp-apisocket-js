@@ -242,4 +242,52 @@ describe('socket', () => {
 			expect(console.warn.mock.calls.length).toBe(0);
 		});
 	});
+
+	describe('hooks', () => {
+		const hookEventData = {
+			event: 'queue_bundle_finished',
+			data: {},
+			completion_id: 1,
+		};
+
+		const hookSubscriberInfo = {
+			id: 'sfv_checker', 
+			name: 'SFV checker'
+		};
+
+		const rejectCallback = (data, accept, reject) => {
+			reject('crc_failed', 'CRC mismatch');
+		};
+
+		test('should handle hook actions', async () => {
+			const socket = await getConnectedSocket();
+			let removeListener = null;
+
+			// Add hook
+			{
+				const hookAddCallback = jest.fn();
+				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished', null, hookAddCallback);
+
+				removeListener = socket.addHook('queue', 'queue_bundle_finished', rejectCallback, hookSubscriberInfo);
+
+				expect(hookAddCallback.mock.calls.length).toBe(1);
+			}
+
+			// Simulate action
+			{
+				const hookEventCallback = jest.fn();
+				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished/1/reject', null, hookEventCallback);
+				server.send(JSON.stringify(hookEventData));
+				expect(hookEventCallback.mock.calls.length).toBe(1);
+			}
+
+			// Clean up
+			{
+				removeListener();
+				expect(socket.hasListeners()).toBe(false);
+			}
+
+			expect(console.warn.mock.calls.length).toBe(0);
+		});
+	});
 });

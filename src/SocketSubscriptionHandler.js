@@ -4,8 +4,8 @@ import { EventEmitter } from 'events';
 
 const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] }) => {
 	// Internal
-	const getSubscriptionId = (event, id) => {
-		return id ? (event + id) : event;
+	const getEmitId = (event, id) => {
+		return id !== undefined ? (event + id) : event;
 	};
 
 	const getSubscriptionUrl = (moduleUrl, id, event) => {
@@ -41,11 +41,24 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		emitter.removeListener(subscriptionId, callback);
 	};
 
+	const handleHookAction = (apiModuleUrl, callback, data, completionId) => {
+		//const completionUrl = apiModuleUrl + '/' + completionId;
+		callback(data, completionData => {
+			socket.post(apiModuleUrl + '/' + completionId + '/resolve', completionData)
+				.catch(error => logger.error('Failed to complete hook action', apiModuleUrl, error));
+		}, (rejectId, rejectMessage) => {
+			socket.post(apiModuleUrl + '/' + completionId + '/reject', {
+				reject_id: rejectId,
+				message: rejectMessage,
+			}).catch(error => logger.error('Failed to complete failed hook action', apiModuleUrl, error));
+		});
+	};
+
 	// Public
 
 	// Listen to a specific event without sending subscription to the server
 	socket.addViewUpdateListener = (viewName, callback, id) => {
-		const subscriptionId = getSubscriptionId(viewName + '_updated', id);
+		const subscriptionId = getEmitId(viewName + '_updated', id);
 		emitter.on(subscriptionId, callback);
 		return () => removeLocalListener(subscriptionId, callback); 
 	};
@@ -53,10 +66,10 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	// Listen to a specific event and manage the API subscription automatically
 	socket.addListener = (apiModuleUrl, event, callback, entityId) => {
 		if (!socket.isReady()) {
-			throw 'Listeners can be only for a connected socket';
+			throw 'Listeners can be added only for a connected socket';
 		}
 
-		const subscriptionId = getSubscriptionId(event, entityId);
+		const subscriptionId = getEmitId(event, entityId);
 		const subscriptionUrl = getSubscriptionUrl(apiModuleUrl, entityId, event);
 
 		emitter.on(subscriptionId, callback);
@@ -78,6 +91,30 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		return emitter.listenerCount > 0 || Object.keys(subscriptions).length > 0;
 	};
 
+	socket.addHook = (apiModuleUrl, event, callback, subscriberInfo) => {
+		if (!socket.isReady()) {
+			throw 'Hooks can be added only for a connected socket';
+		}
+
+		const subscriptionId = event;
+		const subscriptionUrl = apiModuleUrl + '/hooks/' + event;
+
+		callback = handleHookAction.bind(this, subscriptionUrl, callback);
+	
+		const listeners = subscriptions[subscriptionId];
+		if (listeners) {
+			throw 'Hook exists';
+		}
+		
+		emitter.on(subscriptionId, callback);
+		subscriptions[subscriptionId] = 1;
+
+		socket.post(subscriptionUrl, subscriberInfo)
+			.catch(error => logger.error('Failed to add socket hook', subscriptionUrl, error.message));
+
+		return (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
+	};
+
 	// For the socket
 	const Handler = {
 		onSocketDisconnected() {
@@ -90,12 +127,16 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 				logger.verbose(message.event, message.id ? message.id : '-', message.data);
 			}
 
-			if (message.id) {
-				// There can be subscribers for a single entity or for all events of this type... emit for both
-				emitter.emit(message.event + message.id, message.data, message.id);
-			}
+			if (message.completion_id) {
+				emitter.emit(message.event, message.data, message.completion_id);
+			} else {
+				if (message.id) {
+					// There can be subscribers for a single entity or for all events of this type... emit for both
+					emitter.emit(getEmitId(message.event, message.id), message.data, message.id);
+				}
 
-			emitter.emit(message.event, message.data, message.id);
+				emitter.emit(message.event, message.data, message.id);
+			}
 		},
 	};
 
