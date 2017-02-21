@@ -1,11 +1,12 @@
-//import invariant from 'invariant';
+import invariant from 'invariant';
 import { EventEmitter } from 'events';
 
 
 const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] }) => {
 	// Internal
 	const getEmitId = (event, id) => {
-		return id !== undefined ? (event + id) : event;
+		invariant(id !== 0, 'Entity ID "0" is not allowed');
+		return id ? (event + id) : event;
 	};
 
 	const getSubscriptionUrl = (moduleUrl, id, event) => {

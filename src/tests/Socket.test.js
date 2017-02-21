@@ -190,7 +190,7 @@ describe('socket', () => {
 			const commonSubscriptionCallback = jest.fn();
 			const entitySubscriptionCallback = jest.fn();
 
-			await socket.addListener('hubs', 'hub_updated', commonSubscriptionCallback);
+			await socket.addListener('hubs', 'hub_updated', commonSubscriptionCallback, null);
 			await socket.addListener('hubs/sessions', 'hub_updated', entitySubscriptionCallback, entityId);
 
 			server.send(JSON.stringify(commonData));
