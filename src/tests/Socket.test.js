@@ -36,10 +36,13 @@ describe('socket', () => {
 	describe('auth', () => {
 		test('should handle valid credentials', async () => {
 			server.addDataHandler('POST', ApiConstants.LOGIN_URL, authData);
+			const connectedCallback = jest.fn();
 
 			const socket = getSocket();
+			socket.onConnected = connectedCallback;
 			const response = await socket.connect();
 
+			expect(connectedCallback).toHaveBeenCalledWith(authData);
 			expect(response).toEqual(authData);
 			expect(socket.isReady()).toEqual(true);
 
@@ -68,7 +71,12 @@ describe('socket', () => {
 		});
 
 		test('should handle logout', async () => {
+			const sessionResetCallback = jest.fn();
+			const disconnectedCallback = jest.fn();
+
 			const socket = await getConnectedSocket();
+			socket.onSessionReset = sessionResetCallback;
+			socket.onDisconnected = disconnectedCallback;
 
 			// Dummy listener
 			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null);
@@ -81,6 +89,9 @@ describe('socket', () => {
 
 			server.addDataHandler('DELETE', ApiConstants.LOGOUT_URL);
 			await socket.destroy();
+
+			expect(sessionResetCallback.mock.calls.length).toBe(1);
+			expect(disconnectedCallback.mock.calls.length).toBe(1);
 
 			expect(socket.isConnected()).toEqual(false);
 			expect(socket.hasListeners()).toEqual(false);

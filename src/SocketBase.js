@@ -30,11 +30,21 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 	let reconnectTimer = null;
 	let disconnected = true;
 
-	let connectedHandler = null;
-	let disconnectedHandler = null;
+	let connectedCallback = null;
+	let sessionResetCallback = null;
+	let disconnectedCallback = null;
 
 	const logger = SocketLogger(options);
 
+	const resetSession = () => {
+		if (authToken) {
+			if (sessionResetCallback) {
+				sessionResetCallback();
+			}
+
+			authToken = null;
+		}
+	};
 
 	const onClosed = (event) => {
 		logger.info(event.reason ? 'Websocket was closed: ' + event.reason : 'Websocket was closed');
@@ -43,8 +53,8 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		subscriptions.onSocketDisconnected();
 		ws = null;
 		
-		if (disconnectedHandler) {
-			disconnectedHandler(event.reason, event.code);
+		if (disconnectedCallback) {
+			disconnectedCallback(event.reason, event.code);
 		}
 
 		if (authToken && options.autoReconnect && !disconnected) {
@@ -78,6 +88,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		ws.onmessage = onMessage;
 	};
 
+	// Connect handler for creation of new session
 	const handleLogin = (username = options.username, password = options.password) => {
 		return socket.post(ApiConstants.LOGIN_URL, { 
 			username, 
@@ -86,7 +97,8 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		}, true);
 	};
 
-	const handleAuthorize = () => {
+	// Connect handler for associating socket with an existing session token
+	const handleAuthorizeToken = () => {
 		return socket.post(ApiConstants.CONNECT_URL, { 
 			auth_token: authToken,
 		}, true);
@@ -97,17 +109,19 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 			.then((data) => {
 				// Authentication succeed
 
-				if (data) {
+				if (!authToken) {
+					// New session
 					logger.info('Login succeed');
 					authToken = data.auth_token;
 				} else {
+					// Existing session
 					logger.info('Socket associated with an existing session');
 				}
 
-				if (connectedHandler) {
+				if (connectedCallback) {
 					// Catch separately as we don't want an infinite reconnect loop
 					try {
-						connectedHandler(data);
+						connectedCallback(data);
 					} catch (e) {
 						console.error('Error in socket connect handler', e.message);
 					}
@@ -120,13 +134,13 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 					if (authToken && error.code === 400 && options.autoReconnect) {
 						// The session was lost (most likely the client was restarted)
 						logger.info('Session lost, re-sending credentials');
+						resetSession();
 
-						authToken = null;
 						authenticate(resolve, reject, handleLogin);
 						return;
 					} else if (error.code === 401) {
 						// Invalid credentials, reset the token if we were reconnecting to avoid an infinite loop
-						authToken = null;
+						resetSession();
 					}
 
 					// Authentication was rejected
@@ -207,6 +221,12 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		connect(username, password, reconnectOnFailure) {
+			if (isConnected()) {
+				throw 'Connect may only be used for a closed socket';
+			}
+
+			resetSession();
+
 			return startConnect(() => handleLogin(username, password), reconnectOnFailure);
 		},
 
@@ -226,7 +246,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 			logger.info('Reconnecting socket');
 
-			return startConnect(handleAuthorize);
+			return startConnect(handleAuthorizeToken);
 		},
 
 		// Remove the associated API session and close the socket
@@ -235,7 +255,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 			socket.delete(ApiConstants.LOGOUT_URL)
 				.then((data) => {
 					logger.info('Logout succeed');
-					authToken = null;
+					resetSession();
 
 					resolver.resolve(data);
 
@@ -250,14 +270,19 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 			return resolver.promise;
 		},
 
-		// Function to call each time the socket has been connected
+		// Function to call each time the socket has been connected (and authorized)
 		set onConnected(handler) {
-			connectedHandler = handler;
+			connectedCallback = handler;
+		},
+
+		// Function to call each time the stored session token was reset (manual logout/rejected reconnect)
+		set onSessionReset(handler) {
+			sessionResetCallback = handler;
 		},
 
 		// Function to call each time the socket has been disconnected
 		set onDisconnected(handler) {
-			disconnectedHandler = handler;
+			disconnectedCallback = handler;
 		},
 
 		disconnect,
