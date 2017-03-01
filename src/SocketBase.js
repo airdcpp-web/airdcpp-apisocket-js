@@ -9,8 +9,6 @@ import Promise from './Promise';
 
 
 const defaultOptions = {
-	url: 'localhost:5600',
-	secure: false,
 	autoReconnect: true,
 	reconnectInterval: 10,
 	userSession: false,
@@ -157,7 +155,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 	};
 
 	const connectInternal = (resolve, reject, authenticationHandler, reconnectOnFailure = true) => {
-		ws = new WebSocketImpl((options.secure ? 'wss://' : 'ws://') + options.url);
+		ws = new WebSocketImpl(options.url);
 
 		const scheduleReconnect = () => {
 			if (!reconnectOnFailure) {

@@ -1,9 +1,8 @@
 module.exports = {
 	// API settings
-	url: 'localhost:5600/api/v1/',
+	url: 'ws://localhost:5600/api/v1/',
 	username: 'myusername',
 	password: 'mypassword',
-	secure: false,
 
 	// Reconnect
 	autoReconnect: true,
@@ -11,7 +10,10 @@ module.exports = {
 
 	// Logging
 	logLevel: 'verbose',
-	ignoredConsoleEvents: [
+	ignoredListenerEvents: [
+
+	],
+	ignoredRequestPaths: [
 
 	],
 };

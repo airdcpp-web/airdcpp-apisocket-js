@@ -19,7 +19,7 @@ The example displays a status message in main chat every time a new user joins a
 var ApiSocket = require('airdcpp-apisocket');
 
 var socket = ApiSocket({
-	url: 'localhost:5600/api/v1/',
+	url: 'ws://localhost:5600/api/v1/',
 	username: 'exampleuser',
 	password: 'examplepass'
 });

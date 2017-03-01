@@ -5,7 +5,7 @@ import { WebSocket, Server } from 'mock-socket';
 const defaultOptions = {
 	username: 'test',
 	password: 'test',
-	url: 'localhost:7171/api/v1/',
+	url: 'ws://localhost:7171/api/v1/',
 };
 
 const authData = {
@@ -29,7 +29,7 @@ const getSocket = (options = {}) => {
 };
 
 const getMockServer = () => {
-	const mockServer = new Server('ws://' + defaultOptions.url);
+	const mockServer = new Server(defaultOptions.url);
 
 	const addServerHandler = (method, path, responseData, callback) => {
 		const handler = (jsonRequest) => {

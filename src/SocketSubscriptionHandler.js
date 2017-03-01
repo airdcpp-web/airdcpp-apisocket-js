@@ -124,7 +124,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		},
 
 		handleMessage(message) {
-			if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) == -1) {
+			if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
 				logger.verbose(message.event, message.id ? message.id : '-', message.data);
 			}
 

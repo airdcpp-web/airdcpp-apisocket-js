@@ -31,6 +31,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 	};
 
 	const sendRequest = (path, data, method, authenticating) => {
+		// Pre-checks
 		if (!socket.isConnected()) {
 			logger.warn('Attempting to send request on a closed socket: ' + path);
 			return Promise.reject('No socket');
@@ -41,18 +42,25 @@ const SocketRequestHandler = (socket, logger, options) => {
 			return Promise.reject('Not authorized');
 		}
 
+		// Reporting
 		invariant(path, 'Attempting socket request without a path');
 
+		const ignored = options.ignoredRequestPaths && options.ignoredRequestPaths.indexOf(path) !== -1;
+		if (!ignored) {
+			logger.verbose(callbackId, method, path, data ? filterPassword(data) : '(no data)');
+		}
+
+		// Callback
 		const resolver = Promise.pending();
 		const callbackId = getCallbackId();
 
 		callbacks[callbackId] = {
 			time: new Date().getTime(),
 			resolver,
+			ignored,
 		};
 
-		logger.verbose(callbackId, method, path, data ? filterPassword(data) : '(no data)');
-
+		// Actual request
 		const request = {
 			path,
 			method,
@@ -125,7 +133,10 @@ const SocketRequestHandler = (socket, logger, options) => {
 			}
 
 			if (messageObj.code >= 200 && messageObj.code <= 204) {
-				logger.verbose(chalk.green(id), 'SUCCEED', messageObj.data ? messageObj.data : '(no data)');
+				if (!callbacks[id].ignored) {
+					logger.verbose(chalk.green(id), 'SUCCEED', messageObj.data ? messageObj.data : '(no data)');
+				}
+
 				callbacks[id].resolver.resolve(messageObj.data);
 			} else {
 				invariant(messageObj.error, 'Invalid error response received from the API');
