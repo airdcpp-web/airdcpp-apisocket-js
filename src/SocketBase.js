@@ -218,7 +218,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 			return ws;
 		},
 
-		connect(username, password, reconnectOnFailure) {
+		connect(username, password, reconnectOnFailure = true) {
 			if (isConnected()) {
 				throw 'Connect may only be used for a closed socket';
 			}
@@ -229,7 +229,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		// Connect and attempt to associate the socket with an existing session
-		reconnect(token) {
+		reconnect(token, reconnectOnFailure = true) {
 			if (isConnected()) {
 				throw 'Reconnect may only be used for a closed socket';
 			}
@@ -244,7 +244,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 			logger.info('Reconnecting socket');
 
-			return startConnect(handleAuthorizeToken);
+			return startConnect(handleAuthorizeToken, reconnectOnFailure);
 		},
 
 		// Remove the associated API session and close the socket

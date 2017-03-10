@@ -4,10 +4,10 @@ import ApiConstants from '../ApiConstants';
 
 let server;
 
-const getConnectedSocket = async () => {
+const getConnectedSocket = async (options) => {
 	server.addDataHandler('POST', ApiConstants.LOGIN_URL, authData);
 
-	const socket = getSocket();
+	const socket = getSocket(options);
 	await socket.connect();
 
 	return socket;
