@@ -16,7 +16,7 @@ Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-we
 The example displays a status message in main chat every time a new user joins a hub.
 
 ```javascript
-var ApiSocket = require('airdcpp-apisocket');
+var ApiSocket = require('airdcpp-apisocket').Socket;
 
 var socket = ApiSocket({
 	url: 'ws://localhost:5600/api/v1/',
