@@ -286,6 +286,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		disconnect,
 		isConnected,
 		isReady,
+		logger,
 	};
 
 	return socket;
