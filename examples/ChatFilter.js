@@ -5,7 +5,7 @@
 // add/remove ignored words (note that changes are not persisted when reloading the script)
 
 
-const ApiSocket = require('../');
+const ApiSocket = require('../').Socket;
 
 const socket = ApiSocket(require('./settings'));
 

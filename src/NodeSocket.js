@@ -1,6 +1,8 @@
 import SocketBase from './SocketBase';
 import { w3cwebsocket } from 'websocket';
 
-module.exports = function (options) {
-	return SocketBase(options, w3cwebsocket);
+module.exports = {
+	Socket: (options, socketImpl = w3cwebsocket) => {
+		return SocketBase(options, socketImpl);
+	}
 };

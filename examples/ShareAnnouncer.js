@@ -26,7 +26,7 @@ const announceBundles = true;
 // CONFIG END
 
 
-const ApiSocket = require('../');
+const ApiSocket = require('../').Socket;
 const Utils = require('./utils');
 
 const socket = ApiSocket(require('./settings'));

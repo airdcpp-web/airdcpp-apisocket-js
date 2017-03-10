@@ -1,4 +1,4 @@
-import SocketBase from '../SocketBase';
+import { Socket } from '../NodeSocket';
 import { WebSocket, Server } from 'mock-socket';
 
 
@@ -21,7 +21,7 @@ const authData = {
 };
 
 const getSocket = (options = {}) => {
-	const socket = SocketBase({
+	const socket = Socket({
 		...defaultOptions,
 		...options,
 	}, WebSocket);
