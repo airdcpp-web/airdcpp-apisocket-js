@@ -64,10 +64,10 @@ const onUserConnected = (user) => {
 	// Perform search for every item
 	searchItems.forEach(async (item) => {
 		// Get a new instance
-		const instance = await socket.post('search/instances');
+		const instance = await socket.post('search');
 
 		// Post the search
-		await socket.post(`search/instances/${instance.id}/user_search`, {
+		await socket.post(`search/${instance.id}/user_search`, {
 			user: user,
 			query: item.query
 		});
@@ -76,7 +76,7 @@ const onUserConnected = (user) => {
 		await Utils.sleep(5000);
 
 		// Get the best results
-		const results = await socket.get(`search/instances/${instance.id}/results/0/10`);
+		const results = await socket.get(`search/${instance.id}/results/0/10`);
 
 		// Report
 		if (results.length > 0) {
@@ -85,7 +85,7 @@ const onUserConnected = (user) => {
 		}
 
 		// Preserve resources
-		socket.delete(`search/instances/${instance.id}`);
+		socket.delete(`search/${instance.id}`);
 	});
 };
 

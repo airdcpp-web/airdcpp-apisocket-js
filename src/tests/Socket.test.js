@@ -196,13 +196,13 @@ describe('socket', () => {
 		test('should handle listener messages', async () => {
 			const socket = await getConnectedSocket();
 			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null);
-			server.addDataHandler('POST', `hubs/sessions/${entityId}/listeners/hub_updated`, null);
+			server.addDataHandler('POST', `hubs/${entityId}/listeners/hub_updated`, null);
 
 			const commonSubscriptionCallback = jest.fn();
 			const entitySubscriptionCallback = jest.fn();
 
 			await socket.addListener('hubs', 'hub_updated', commonSubscriptionCallback, null);
-			await socket.addListener('hubs/sessions', 'hub_updated', entitySubscriptionCallback, entityId);
+			await socket.addListener('hubs', 'hub_updated', entitySubscriptionCallback, entityId);
 
 			server.send(JSON.stringify(commonData));
 			server.send(JSON.stringify(entityData));
