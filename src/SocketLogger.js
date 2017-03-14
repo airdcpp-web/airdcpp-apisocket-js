@@ -16,7 +16,7 @@ const Severities = {
 };
 
 
-const allowFormatArgs = !isBrowser || process.env.NODE_ENV === 'test';
+const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
 const Logger = ({ logLevel = LOG_VERBOSE }) => {
 	const print = (args, printHandler, argFormat) => {
