@@ -42,6 +42,8 @@ const SocketRequestHandler = (socket, logger, options) => {
 			return Promise.reject('Not authorized');
 		}
 
+		const callbackId = getCallbackId();
+
 		// Reporting
 		invariant(path, 'Attempting socket request without a path');
 
@@ -52,7 +54,6 @@ const SocketRequestHandler = (socket, logger, options) => {
 
 		// Callback
 		const resolver = Promise.pending();
-		const callbackId = getCallbackId();
 
 		callbacks[callbackId] = {
 			time: new Date().getTime(),
