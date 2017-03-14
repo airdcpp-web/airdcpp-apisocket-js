@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import isBrowser from 'is-in-browser';
 
 export const LOG_NONE = 'none';
 export const LOG_ERROR = 'error';
@@ -15,12 +16,15 @@ const Severities = {
 };
 
 
+const allowFormatArgs = !isBrowser || process.env.NODE_ENV === 'test';
+
 const Logger = ({ logLevel = LOG_VERBOSE }) => {
 	const print = (args, printHandler, argFormat) => {
 		let printableArgs = [ ...Array.prototype.slice.call(args) ];
-		if (argFormat) {
+
+		if (allowFormatArgs && argFormat) {
 			printableArgs = printableArgs.reduce((reduced, arg) => {
-				reduced.push(argFormat(arg));
+				reduced.push(argFormat(typeof arg === 'object' ? JSON.stringify(arg, null, '  ') : arg));
 				return reduced;
 			}, []);
 		}
