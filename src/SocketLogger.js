@@ -34,7 +34,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 				return;
 			}
 
-			print(arguments, console.log);
+			print(arguments, console.log, chalk.gray);
 		},
 
 		/*success() {
