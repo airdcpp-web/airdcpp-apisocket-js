@@ -290,6 +290,7 @@ describe('socket', () => {
 
 				removeListener = await socket.addHook('queue', 'queue_bundle_finished_hook', rejectCallback, hookSubscriberInfo);
 
+				expect(hookAddCallback.mock.calls[0][0].data).toEqual(hookSubscriberInfo);
 				expect(hookAddCallback.mock.calls.length).toBe(1);
 			}
 

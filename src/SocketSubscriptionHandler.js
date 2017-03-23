@@ -73,13 +73,13 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		delete pendingSubscriptions[subscriptionId];
 	};
 
-	const addPendingEntry = (subscriptionUrl, subscriptionId, callback) => {
+	const addPendingEntry = (subscriptionUrl, subscriptionId, callback, data) => {
 		const removeHandler = (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
 
 		if (!subscriptions[subscriptionId]) {
 			if (!pendingSubscriptions[subscriptionId]) {
 				pendingSubscriptions[subscriptionId] = [];
-				socket.post(subscriptionUrl).then(onSubscriptionAddSucceeded.bind(this, subscriptionId), onSubscriptionAddFailed.bind(this, subscriptionId));
+				socket.post(subscriptionUrl, data).then(onSubscriptionAddSucceeded.bind(this, subscriptionId), onSubscriptionAddFailed.bind(this, subscriptionId));
 			}
 
 			const resolver = Promise.pending();
@@ -136,7 +136,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		callback = handleHookAction.bind(this, subscriptionUrl, callback);
 		emitter.on(subscriptionId, callback);
 
-		return addPendingEntry(subscriptionUrl, subscriptionId, callback);
+		return addPendingEntry(subscriptionUrl, subscriptionId, callback, subscriberInfo);
 	};
 
 	socket.getPendingSubscriptionCount = () => {
