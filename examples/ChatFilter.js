@@ -53,7 +53,7 @@ const onOutgoingHubMessage = (message, accept, reject) => {
 const onOutgoingPrivateMessage = (message, accept, reject) => {
 	const statusMessage = checkChatCommand(message.text);
 	if (statusMessage) {
-		socket.post(`private_chat/sessions/${message.user.cid}/status_message`, {
+		socket.post(`private_chat/${message.user.cid}/status_message`, {
 			text: statusMessage,
 			severity: 'info',
 		});

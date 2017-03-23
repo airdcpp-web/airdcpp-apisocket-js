@@ -222,9 +222,18 @@ describe('socket', () => {
 			const subscribeCallback = jest.fn();
 			server.addDataHandler('POST', 'hubs/listeners/hub_updated', null, subscribeCallback);
 
-			const removeListener1 = await socket.addListener('hubs', 'hub_updated', _ => {});
-			const removeListener2 = await socket.addListener('hubs', 'hub_updated', _ => {});
+			// Add two simultaneous pending add events
+			const p1 = socket.addListener('hubs', 'hub_updated', _ => {});
+			const p2 = socket.addListener('hubs', 'hub_updated', _ => {});
+
+			expect(socket.hasListeners()).toBe(false);
+			expect(socket.getPendingSubscriptionCount()).toBe(1);
+
+			const removeListener1 = await p1;
+			const removeListener2 = await p2;
+
 			expect(subscribeCallback.mock.calls.length).toBe(1);
+			expect(socket.getPendingSubscriptionCount()).toBe(0);
 
 			const deleteCallback = jest.fn();
 			server.addDataHandler('DELETE', 'hubs/listeners/hub_updated', null, deleteCallback);
@@ -279,7 +288,7 @@ describe('socket', () => {
 				const hookAddCallback = jest.fn();
 				server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished_hook', null, hookAddCallback);
 
-				removeListener = socket.addHook('queue', 'queue_bundle_finished_hook', rejectCallback, hookSubscriberInfo);
+				removeListener = await socket.addHook('queue', 'queue_bundle_finished_hook', rejectCallback, hookSubscriberInfo);
 
 				expect(hookAddCallback.mock.calls.length).toBe(1);
 			}

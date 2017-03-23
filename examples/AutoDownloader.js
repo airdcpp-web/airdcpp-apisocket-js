@@ -70,7 +70,7 @@ const searchItem = async () => {
 	const instance = await socket.post('search');
 
 	// Add instance-specific listener for results
-	socket.addListener('search', 'search_hub_searches_sent', onSearchSent.bind(this, item, instance), instance.id);
+	await socket.addListener('search', 'search_hub_searches_sent', onSearchSent.bind(this, item, instance), instance.id);
 
 	// Perform the actual search
 	const searchQueueInfo = await socket.post(`search/${instance.id}/hub_search`, {

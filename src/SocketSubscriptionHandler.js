@@ -20,6 +20,9 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	let subscriptions = {};
 	const emitter = new EventEmitter();
 
+	// Subscriptions pending to be added in the API
+	const pendingSubscriptions = {};
+
 	const removeSocketListener = (subscriptionUrl, subscriptionId, callback, sendApi) => {
 		if (!socket.isReady()) {
 			return;
@@ -55,6 +58,43 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		});
 	};
 
+	const onSubscriptionAddSucceeded = (subscriptionId) => {
+		const pending = pendingSubscriptions[subscriptionId];
+		pending.forEach(pendingItem => pendingItem.resolver.resolve(pendingItem.removeHandler));
+
+		subscriptions[subscriptionId] = pending.length;
+		delete pendingSubscriptions[subscriptionId];
+	};
+
+	const onSubscriptionAddFailed = (subscriptionId, error) => {
+		const pending = pendingSubscriptions[subscriptionId];
+		pending.forEach(pendingItem => pendingItem.resolver.reject(error));
+
+		delete pendingSubscriptions[subscriptionId];
+	};
+
+	const addPendingEntry = (subscriptionUrl, subscriptionId, callback) => {
+		const removeHandler = (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
+
+		if (!subscriptions[subscriptionId]) {
+			if (!pendingSubscriptions[subscriptionId]) {
+				pendingSubscriptions[subscriptionId] = [];
+				socket.post(subscriptionUrl).then(onSubscriptionAddSucceeded.bind(this, subscriptionId), onSubscriptionAddFailed.bind(this, subscriptionId));
+			}
+
+			const resolver = Promise.pending();
+			pendingSubscriptions[subscriptionId].push({ 
+				resolver, 
+				removeHandler 
+			});
+
+			return resolver.promise;
+		}
+
+		subscriptions[subscriptionId]++;
+		return Promise.resolve(removeHandler);
+	};
+
 	// Public
 
 	// Listen to a specific event without sending subscription to the server
@@ -74,18 +114,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		const subscriptionUrl = getSubscriptionUrl(apiModuleUrl, entityId, event);
 
 		emitter.on(subscriptionId, callback);
-
-		const listeners = subscriptions[subscriptionId];
-		if (!listeners) {
-			subscriptions[subscriptionId] = 0;
-
-			socket.post(subscriptionUrl)
-				.catch(error => logger.error('Failed to add socket listener', subscriptionUrl, entityId ? entityId : '', error.message));
-		}
-
-		subscriptions[subscriptionId]++;
-
-		return (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
+		return addPendingEntry(subscriptionUrl, subscriptionId, callback);
 	};
 
 	socket.hasListeners = () => {
@@ -98,22 +127,20 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		}
 
 		const subscriptionId = event;
+		if (subscriptions[subscriptionId] || pendingSubscriptions[subscriptionId]) {
+			throw 'Hook exists';
+		}
+
 		const subscriptionUrl = apiModuleUrl + '/hooks/' + event;
 
 		callback = handleHookAction.bind(this, subscriptionUrl, callback);
-	
-		const listeners = subscriptions[subscriptionId];
-		if (listeners) {
-			throw 'Hook exists';
-		}
-		
 		emitter.on(subscriptionId, callback);
-		subscriptions[subscriptionId] = 1;
 
-		socket.post(subscriptionUrl, subscriberInfo)
-			.catch(error => logger.error('Failed to add socket hook', subscriptionUrl, error.message));
+		return addPendingEntry(subscriptionUrl, subscriptionId, callback);
+	};
 
-		return (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
+	socket.getPendingSubscriptionCount = () => {
+		return Object.keys(pendingSubscriptions).length;
 	};
 
 	// For the socket
