@@ -88,11 +88,11 @@ Generic methods for viewing and changing the socket connect state. These methods
 
 **Arguments**
 
-**`username`, `password`** (string)
+**`username`, `password`** (string, optional)
 
 Custom user name and password that will override the possible globally set values.
 
-**`reconnectOnFailure`** (boolean)
+**`reconnectOnFailure`** (boolean, optional)
 
 Attempt to reconnect automatically if the socket can't be connected due to connectivity issue (API errors will always fail the action). 
 This won't have effect if the socket gets disconnected after a successful connect attempt (the global auto reconnect option is used there instead).
@@ -171,7 +171,7 @@ Similar to `console` object but the output is emitted only if allowed by the `lo
 
 **Arguments**
 
-**`path`** (string)
+**`path`** (string, required)
 
 API request path
 
@@ -206,20 +206,20 @@ socket.post('events', {
 
 **Arguments**
 
-**`path`** (string)
+**`path`** (string, required)
 
 API path without the `listener/name` part.
 
-**`listenerName`** (string)
+**`listenerName`** (string, required)
 
-Name of the listener
+Name of the API event
 
-**`callback`** (function)
+**`callback`** (function, required)
 
 Function to call on received event messages. The callback function signature is `handler(data, entityId)` where `data` is the 
 subscription-specific data object (if available) and `entityId` is set only for entity type subscriptions.
 
-**`entityId`** (optional, string|number)
+**`entityId`** (string|number, optional)
 
 Possible ID when using per-entity subscriptions (filelist, hub, extension...). Events from all entities will be sent if no entity ID is specified.
 
@@ -251,15 +251,15 @@ removeListener();
 
 **Arguments**
 
-**`path`** (string)
+**`path`** (string, required)
 
 API path without the `hook/name` part.
 
-**`hookName`** (string)
+**`hookName`** (string, required)
 
 Name of the hook
 
-**`callback`** (function)
+**`callback`** (function, required)
 
 Function to call on received event messages. The callback function signature is `handler(data, accept, reject)` where `data` is the 
 hook-specific data object.
