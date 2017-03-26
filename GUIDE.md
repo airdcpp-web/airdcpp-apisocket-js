@@ -88,11 +88,11 @@ Generic methods for viewing and changing the socket connect state. These methods
 
 **Arguments**
 
-`username`, `password` (string)
+**`username`, `password`** (string)
 
 Custom user name and password that will override the possible globally set values.
 
-`reconnectOnFailure` (boolean)
+**`reconnectOnFailure`** (boolean)
 
 Attempt to reconnect automatically if the socket can't be connected due to connectivity issue (API errors will always fail the action). 
 This won't have effect if the socket gets disconnected after a successful connect attempt (the global auto reconnect option is used there instead).
@@ -113,7 +113,7 @@ Reconnect a disconnected session or connect with an existing session token. This
 
 **Arguments**
 
-`authToken` (string, optional)
+**`authToken`** (string, optional)
 
 Possible session token to use for reconnecting. If no token is specified, the cached token will be used. If there is no cached token available, the method will throw.
 
@@ -171,17 +171,17 @@ Similar to `console` object but the output is emitted only if allowed by the `lo
 
 **Arguments**
 
-`path` (string)
+**`path`** (string)
 
 API request path
 
-`data` (object, optional)
+**`data`** (object, optional)
 
-Method-specific data object. No data is allowed for `get` and `delete methods`
+Method-specific data object. No data is allowed for `get` and `delete` methods.
 
 **Return value**
 
-Promise that will be resolved with the possible request response
+Promise that will be resolved with the possible response data (or is rejected with an error object).
 
 **Example**
 
@@ -206,26 +206,26 @@ socket.post('events', {
 
 **Arguments**
 
-`path` (string)
+**`path`** (string)
 
 API path without the `listener/name` part.
 
-`listenerName` (string)
+**`listenerName`** (string)
 
 Name of the listener
 
-`callback` (function)
+**`callback`** (function)
 
 Function to call on received event messages. The callback function signature is `handler(data, entityId)` where `data` is the 
 subscription-specific data object (if available) and `entityId` is set only for entity type subscriptions.
 
-`entityId` (optional, string|number)
+**`entityId`** (optional, string|number)
 
 Possible ID when using per-entity subscriptions (filelist, hub, extension...). Events from all entities will be sent if no entity ID is specified.
 
 **Return value**
 
-Function that will remove the listener when being called.
+Promise returning a function that will remove the listener when being called. Note that all listeners will be removed automatically when the socket is disconnected.
 
 **Example**
 
@@ -235,7 +235,13 @@ const onMessageReceived = (message, hubId) => {
   console.log(`${message.text} (hub ID: ${hubId})`);
 }
 
-socket.addListener('hubs', 'hub_chat_message', onMessageReceived);
+const removeListener = await socket.addListener('hubs', 'hub_chat_message', onMessageReceived);
+
+// ... other code
+
+
+// Remove the listener
+removeListener();
 
 ```
 
@@ -245,22 +251,22 @@ socket.addListener('hubs', 'hub_chat_message', onMessageReceived);
 
 **Arguments**
 
-`path` (string)
+**`path`** (string)
 
 API path without the `hook/name` part.
 
-`hookName` (string)
+**`hookName`** (string)
 
 Name of the hook
 
-`callback` (function)
+**`callback`** (function)
 
 Function to call on received event messages. The callback function signature is `handler(data, accept, reject)` where `data` is the 
 hook-specific data object.
 
 **Return value**
 
-Function that will remove the listener when being called.
+Promise returning a function that will remove the hook when being called. Note that all hooks will be removed automatically when the socket is disconnected.
 
 **Example**
 
@@ -274,6 +280,12 @@ const handleIncomingMessage = (message, accept, reject) => {
   }
 }
 
-socket.addHook('hubs', 'hub_incoming_message_hook', handleIncomingMessage);
+const removeHook = await socket.addHook('hubs', 'hub_incoming_message_hook', handleIncomingMessage);
+
+// ... other code
+
+
+// Remove the hook
+removeHook();
 
 ```
