@@ -19,14 +19,20 @@ const Severities = {
 const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
 const Logger = ({ logLevel = LOG_VERBOSE }) => {
+	const formatCurrentTime = () => {
+		const d = new Date();
+		return `[${d.toLocaleDateString()} ${d.toLocaleTimeString()}:${d.getMilliseconds()}]`;
+	};
+
 	const print = (args, printHandler, argFormat) => {
 		let printableArgs = [ ...Array.prototype.slice.call(args) ];
 
 		if (allowFormatArgs && argFormat) {
-			printableArgs = printableArgs.reduce((reduced, arg) => {
-				reduced.push(argFormat(typeof arg === 'object' ? JSON.stringify(arg, null, '  ') : arg));
-				return reduced;
-			}, []);
+			// Add the current time as well
+			printableArgs = [
+				chalk.magenta(formatCurrentTime()),
+				...printableArgs.map(arg => argFormat(typeof arg === 'object' ? JSON.stringify(arg, null, '  ') : arg)),
+			];
 		}
 
 		printHandler.apply(console, printableArgs);
@@ -54,7 +60,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 				return;
 			}
 
-			print(arguments, console.info, chalk.bold);
+			print(arguments, console.info, chalk.white.bold);
 		},
 
 		warn() {

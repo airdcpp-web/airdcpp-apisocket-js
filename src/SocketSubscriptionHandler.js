@@ -151,13 +151,17 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		},
 
 		handleMessage(message) {
-			if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
-				logger.verbose(message.event, message.id ? message.id : '-', message.data);
-			}
-
 			if (message.completion_id) {
+				if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
+					logger.verbose(message.event, `(completion id ${message.completion_id})`, message.data);
+				}
+
 				emitter.emit(message.event, message.data, message.completion_id);
 			} else {
+				if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
+					logger.verbose(message.event, message.id ? `(entity ${message.id})` : '(no entity)', message.data);
+				}
+
 				if (message.id) {
 					// There can be subscribers for a single entity or for all events of this type... emit for both
 					emitter.emit(getEmitId(message.event, message.id), message.data, message.id);

@@ -4,7 +4,7 @@ import SocketLogger from './SocketLogger';
 import SocketSubscriptionHandler from './SocketSubscriptionHandler';
 import SocketRequestHandler from './SocketRequestHandler';
 
-//import invariant from 'invariant';
+import invariant from 'invariant';
 import Promise from './Promise';
 
 
@@ -33,6 +33,8 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 	let disconnectedCallback = null;
 
 	const logger = SocketLogger(options);
+
+	invariant(userOptions.url, '"url" must be defined in settings object');
 
 	const resetSession = () => {
 		if (authToken) {

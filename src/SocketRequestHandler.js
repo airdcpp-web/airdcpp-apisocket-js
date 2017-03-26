@@ -49,7 +49,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 
 		const ignored = options.ignoredRequestPaths && options.ignoredRequestPaths.indexOf(path) !== -1;
 		if (!ignored) {
-			logger.verbose(callbackId, method, path, data ? filterPassword(data) : '(no data)');
+			logger.verbose(chalk.white.bold(callbackId), method, path, data ? filterPassword(data) : '(no data)');
 		}
 
 		// Callback
