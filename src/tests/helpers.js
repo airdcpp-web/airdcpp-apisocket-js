@@ -1,4 +1,4 @@
-import { Socket } from '../NodeSocket';
+import Socket from '../NodeSocket';
 import { WebSocket, Server } from 'mock-socket';
 
 

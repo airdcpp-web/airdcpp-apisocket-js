@@ -5,9 +5,9 @@
 // add/remove ignored words (note that changes are not persisted when reloading the script)
 
 
-const ApiSocket = require('../').Socket;
+const ApiSocket = require('../');
 
-const socket = ApiSocket(require('./settings'));
+const socket = ApiSocket(require('./settings'), require('websocket').w3cwebsocket);
 
 
 // CONFIG START

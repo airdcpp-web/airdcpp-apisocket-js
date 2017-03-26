@@ -38,10 +38,10 @@ const checkConnectingUsers = true;
 // CONFIG END
 
 
-const ApiSocket = require('../').Socket;
+const ApiSocket = require('../');
 const Utils = require('./utils');
 
-const socket = ApiSocket(require('./settings'));
+const socket = ApiSocket(require('./settings'), require('websocket').w3cwebsocket);
 
 
 socket.onConnected = () => {
