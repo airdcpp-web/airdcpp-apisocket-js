@@ -24,7 +24,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	const pendingSubscriptions = {};
 
 	const removeSocketListener = (subscriptionUrl, subscriptionId, callback, sendApi) => {
-		if (!socket.isReady()) {
+		if (!socket.isConnected()) {
 			return;
 		}
 
@@ -32,7 +32,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		emitter.removeListener(subscriptionId, callback);
 
 		if (subscriptions[subscriptionId] === 0) {
-			if (sendApi && socket.isReady()) {
+			if (sendApi && socket.isConnected()) {
 				socket.delete(subscriptionUrl)
 					.catch(error => logger.error('Failed to remove socket listener', subscriptionUrl, error));
 			}
@@ -106,7 +106,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	// Listen to a specific event and manage the API subscription automatically
 	socket.addListener = (apiModuleUrl, event, callback, entityId) => {
-		if (!socket.isReady()) {
+		if (!socket.isConnected()) {
 			throw 'Listeners can be added only for a connected socket';
 		}
 
@@ -122,7 +122,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	};
 
 	socket.addHook = (apiModuleUrl, event, callback, subscriberInfo) => {
-		if (!socket.isReady()) {
+		if (!socket.isConnected()) {
 			throw 'Hooks can be added only for a connected socket';
 		}
 

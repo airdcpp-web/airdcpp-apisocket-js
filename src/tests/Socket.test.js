@@ -44,7 +44,7 @@ describe('socket', () => {
 
 			expect(connectedCallback).toHaveBeenCalledWith(authData);
 			expect(response).toEqual(authData);
-			expect(socket.isReady()).toEqual(true);
+			expect(socket.isConnected()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
@@ -88,7 +88,7 @@ describe('socket', () => {
 			});
 
 			server.addDataHandler('DELETE', ApiConstants.LOGOUT_URL);
-			await socket.destroy();
+			await socket.logout();
 
 			expect(sessionResetCallback.mock.calls.length).toBe(1);
 			expect(disconnectedCallback.mock.calls.length).toBe(1);
@@ -123,7 +123,7 @@ describe('socket', () => {
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
 
-			expect(socket.isReady()).toEqual(true);
+			expect(socket.isConnected()).toEqual(true);
 			expect(console.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
@@ -136,7 +136,7 @@ describe('socket', () => {
 
 			server.addDataHandler('POST', ApiConstants.CONNECT_URL, null);
 			await socket.reconnect();
-			expect(socket.isReady()).toEqual(true);
+			expect(socket.isConnected()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
@@ -155,7 +155,7 @@ describe('socket', () => {
 			socket.reconnect();
 			jest.runOnlyPendingTimers();
 
-			expect(socket.isReady()).toEqual(true);
+			expect(socket.isConnected()).toEqual(true);
 
 			expect(console.warn.mock.calls.length).toBe(1);
 			expect(socket.getPendingRequestCount()).toBe(0);

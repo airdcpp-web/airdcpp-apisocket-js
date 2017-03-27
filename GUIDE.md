@@ -5,8 +5,9 @@
   - [connect](#connect)
   - [disconnect](#disconnect)
   - [reconnect](#reconnect)
+  - [isConnecting](#isconnecting)
   - [isConnected](#isconnected)
-  - [destroy](#destroy)
+  - [logout](#logout)
 - [Connect state events](#connect-state-events)
   - [onSocketConnected](#onsocketconnected)
   - [onSocketDisconnected](#onsocketdisconnected)
@@ -121,21 +122,21 @@ Possible session token to use for reconnecting. If no token is specified, the ca
 
 Promise that will be resolved with response of the [POST /sessions/socket](http://docs.airdcpp.apiary.io/#reference/sessions/authentication/socket) API method.
 
+### `isConnecting`
+
+Returns true if connection is currently being established.
+
 ### `isConnected`
 
-Returns true if the socket is currently connected (but not possibly authenticated).
+Returns true if the socket is currently connected and authenticated.
 
-### `isReady`
-
-Returns true if the socket is connected and authenticated.
-
-### `destroy`
+### `logout`
 
 Invalidate the current API session and disconnect the socket.
 
 **Return value**
 
-Promise that will be resolved with response of the [DELETE /sessions](http://docs.airdcpp.apiary.io/#reference/sessions/current-session/remove-current-session) API method.
+Promise that will be resolved with the possible response of the [DELETE /sessions](http://docs.airdcpp.apiary.io/#reference/sessions/current-session/remove-current-session) API method.
 
 
 
@@ -153,7 +154,7 @@ Fired after the socket was disconnected.
 
 ### `onSessionReset`
 
-Fired when the session was reset (either after [`destroy`](#destroy) was called or due to a rejected reconnect attempt).
+Fired when the session was reset (either after [`logout`](#logout) was called or due to a rejected reconnect attempt).
 
 
 

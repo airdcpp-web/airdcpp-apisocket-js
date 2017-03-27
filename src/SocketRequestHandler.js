@@ -32,12 +32,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 
 	const sendRequest = (path, data, method, authenticating) => {
 		// Pre-checks
-		if (!socket.isConnected()) {
-			logger.warn('Attempting to send request on a closed socket: ' + path);
-			return Promise.reject('No socket');
-		}
-
-		if (!authenticating && !socket.isReady()) {
+		if (!authenticating && !socket.isConnected()) {
 			logger.warn('Attempting to send request on a non-authenticated socket: ' + path);
 			return Promise.reject('Not authorized');
 		}
@@ -99,8 +94,8 @@ const SocketRequestHandler = (socket, logger, options) => {
 		return sendRequest(path, data, 'PATCH');
 	};
 
-	socket.post = (path, data, authenticating) => {
-		return sendRequest(path, data, 'POST', authenticating);
+	socket.post = (path, data) => {
+		return sendRequest(path, data, 'POST');
 	};
 
 	socket.delete = (path, data) => {
@@ -153,7 +148,9 @@ const SocketRequestHandler = (socket, logger, options) => {
 			delete callbacks[id];
 		},
 
-
+		postAuthenticate(path, data) {
+			return sendRequest(path, data, 'POST', true);
+		},
 	};
 };
 

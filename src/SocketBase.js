@@ -90,7 +90,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 	// Connect handler for creation of new session
 	const handleLogin = (username = options.username, password = options.password) => {
-		return socket.post(ApiConstants.LOGIN_URL, { 
+		return requests.postAuthenticate(ApiConstants.LOGIN_URL, { 
 			username, 
 			password,
 			user_session: options.userSession,
@@ -99,7 +99,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 	// Connect handler for associating socket with an existing session token
 	const handleAuthorizeToken = () => {
-		return socket.post(ApiConstants.CONNECT_URL, { 
+		return requests.postAuthenticate(ApiConstants.CONNECT_URL, { 
 			auth_token: authToken,
 		}, true);
 	};
@@ -192,14 +192,14 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		});
 	};
 
-	// Is the socket connected but not possibly authorized?
+	// Is the socket connected and authorized?
 	const isConnected = () => {
-		return ws && ws.readyState === (ws.OPEN || 1) ? true : false;
+		return !!(ws && ws.readyState === (ws.OPEN || 1) && authToken);
 	};
 
-	// Is the socket connected and authorized?
-	const isReady = () => {
-		return isConnected() && !!authToken;
+	// Is the socket connected but not possibly authorized?
+	const isConnecting = () => {
+		return !!(ws && !isConnected());
 	};
 
 	// Disconnects the socket but keeps the session token
@@ -221,7 +221,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		connect(username, password, reconnectOnFailure = true) {
-			if (isConnected()) {
+			if (ws) {
 				throw 'Connect may only be used for a closed socket';
 			}
 
@@ -232,7 +232,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 		// Connect and attempt to associate the socket with an existing session
 		reconnect(token, reconnectOnFailure = true) {
-			if (isConnected()) {
+			if (ws) {
 				throw 'Reconnect may only be used for a closed socket';
 			}
 
@@ -250,7 +250,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		// Remove the associated API session and close the socket
-		destroy() {
+		logout() {
 			const resolver = Promise.pending();
 			socket.delete(ApiConstants.LOGOUT_URL)
 				.then((data) => {
@@ -286,8 +286,8 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		disconnect,
+		isConnecting,
 		isConnected,
-		isReady,
 		logger,
 	};
 
