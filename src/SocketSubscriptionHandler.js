@@ -1,6 +1,8 @@
 import invariant from 'invariant';
 import { EventEmitter } from 'events';
 
+import { eventIgnored } from './utils';
+
 
 const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] }) => {
 	// Internal
@@ -151,14 +153,15 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 		},
 
 		handleMessage(message) {
+			const ignored = eventIgnored(message.event, ignoredListenerEvents);
 			if (message.completion_id) {
-				if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
+				if (!ignored) {
 					logger.verbose(message.event, `(completion id ${message.completion_id})`, message.data);
 				}
 
 				emitter.emit(message.event, message.data, message.completion_id);
 			} else {
-				if (!ignoredListenerEvents || ignoredListenerEvents.indexOf(message.event) === -1) {
+				if (!ignored) {
 					logger.verbose(message.event, message.id ? `(entity ${message.id})` : '(no entity)', message.data);
 				}
 

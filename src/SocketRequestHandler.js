@@ -2,6 +2,8 @@ import chalk from 'chalk';
 import invariant from 'invariant';
 import Promise from './Promise';
 
+import { eventIgnored } from './utils';
+
 
 const SocketRequestHandler = (socket, logger, options) => {
 	let callbacks = {};
@@ -42,7 +44,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 		// Reporting
 		invariant(path, 'Attempting socket request without a path');
 
-		const ignored = options.ignoredRequestPaths && options.ignoredRequestPaths.indexOf(path) !== -1;
+		const ignored = eventIgnored(path, options.ignoredRequestPaths);
 		if (!ignored) {
 			logger.verbose(chalk.white.bold(callbackId), method, path, data ? filterPassword(data) : '(no data)');
 		}

@@ -31,8 +31,7 @@
     "events": "^1.1.0",
     "invariant": "^2.2.0",
     "is-in-browser": "^1.1.3",
-    "promise": "^7.1.1",
-    "websocket": "^1.0.22"
+    "promise": "^7.1.1"
   },
   "devDependencies": {
     "babel-cli": "^6.5.1",
@@ -47,7 +46,8 @@
     "jest-cli": "^19.0.0",
     "mock-socket": "^6.0.1",
     "mockdate": "^2.0.1",
-    "rimraf": "^2.5.2"
+    "rimraf": "^2.5.2",
+    "websocket": "^1.0.22"
   },
   "jest": {
     "coverageDirectory": "./coverage/",
