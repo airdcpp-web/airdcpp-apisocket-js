@@ -74,8 +74,8 @@ const socket = ApiSocket(settings, w3cwebsocket);
 | **requestTimeout** | `number` | 30 | Notify about about API requests that have taken longer than this to complete (seconds). This is mainly used for detecting possible issues (deadlocks) with the backend as messages sent via WebSocket should always be delivered (pending request will be aborted automatically when the socket is disconnected). |
 | **reconnectInterval** | `number` | 10 | Interval of automatic reconnection (seconds) |
 | **logLevel** | `enum[string]` | verbose | Logging level. Available values: `none`, `error`, `warn`, `info`, `verbose` |
-| **ignoredRequestPaths** | `array[string] | RegExp` | | Request paths that should never be displayed in logs/console. Array of exact paths or a single regex pattern may be used. This option is mainly targeted for debugging purposes in order to prevent spammy requests from filling the console window. |
-| **ignoredListenerEvents** | `array[string] | RegExp` | | Listener/hook event names that should never be displayed in logs/console. Array of exact names or a single regex pattern may be used. This option is mainly targeted for debugging purposes in order to prevent spammy events from filling the console window. |
+| **ignoredRequestPaths** | `array[string]` &#124; `RegExp` | | Request paths that should never be displayed in logs/console. Array of exact paths or a single regex pattern may be used. This option is mainly targeted for debugging purposes in order to prevent spammy requests from filling the console window. |
+| **ignoredListenerEvents** | `array[string]` &#124; `RegExp` | | Listener/hook event names that should never be displayed in logs/console. Array of exact names or a single regex pattern may be used. This option is mainly targeted for debugging purposes in order to prevent spammy events from filling the console window. |
 
 
 
@@ -295,7 +295,7 @@ removeHook();
 
 With certain hooks, the console may quickly be filled with API communication messages when `verbose` logging level is used.
 
-The following [`socket options`](#settings) will filter out all incoming `share_file_validation_hook` hook messages and their respective accept calls (rejected files are still being logged):
+The following [socket options](#settings) will filter out all incoming `share_file_validation_hook` hook messages and their respective accept calls (rejected files are still being logged):
 
 ```js
 ignoredListenerEvents: [
