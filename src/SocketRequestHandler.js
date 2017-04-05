@@ -13,11 +13,11 @@ const SocketRequestHandler = (socket, logger, options) => {
 
 	// This creates a new callback ID for a request
 	const getCallbackId = () => {
-		currentCallbackId += 1;
-		if (currentCallbackId > 10000) {
+		if (currentCallbackId > 100000) {
 			currentCallbackId = 0;
 		}
 
+		currentCallbackId += 1;
 		return currentCallbackId;
 	};
 
