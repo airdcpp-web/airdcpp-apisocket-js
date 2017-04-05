@@ -1,6 +1,6 @@
 {
   "name": "airdcpp-apisocket",
-  "version": "1.0.0-beta.13",
+  "version": "1.0.0-rc.1",
   "description": "Javascript connector for AirDC++ Web API",
   "license": "MIT",
   "authors": [
@@ -24,6 +24,7 @@
     "clean": "rimraf dist/*",
     "lint": "eslint src *.js",
     "lint-fix": "eslint --fix src *.js",
+    "prepublish": "npm run build",
     "test": "jest"
   },
   "dependencies": {
