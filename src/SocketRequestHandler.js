@@ -132,7 +132,7 @@ const SocketRequestHandler = (socket, logger, options) => {
 
 			if (messageObj.code >= 200 && messageObj.code <= 204) {
 				if (!callbacks[id].ignored) {
-					logger.verbose(chalk.green(id), 'SUCCEED', messageObj.data ? messageObj.data : '(no data)');
+					logger.verbose(chalk.green(id), 'SUCCEEDED', messageObj.data ? messageObj.data : '(no data)');
 				}
 
 				callbacks[id].resolver.resolve(messageObj.data);
