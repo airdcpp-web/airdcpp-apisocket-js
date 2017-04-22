@@ -16,6 +16,7 @@ const getConnectedSocket = async (options) => {
 describe('socket', () => {
 	const originalWarn = console.warn;
 	const originalError = console.error;
+	const originalLog = console.log;
 
 	beforeEach(() => {
 		server = getMockServer();
@@ -309,6 +310,27 @@ describe('socket', () => {
 			}
 
 			expect(console.warn.mock.calls.length).toBe(0);
+		});
+	});
+
+	describe('logging', () => {
+		test('should respect log levels', async () => {
+			console.log = jest.fn();
+
+			const socket = await getConnectedSocket({
+				logLevel: 'warn'
+			});
+
+			socket.disconnect(true);
+			await socket.delete('dummy').catch(error => {
+				
+			});
+
+			expect(console.error.mock.calls.length).toBe(0);
+			expect(console.warn.mock.calls.length).toBe(1);
+			expect(console.log.mock.calls.length).toBe(0);
+
+			console.log = originalLog;
 		});
 	});
 });

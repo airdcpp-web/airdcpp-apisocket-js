@@ -19,6 +19,8 @@ const Severities = {
 const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
 const Logger = ({ logLevel = LOG_VERBOSE }) => {
+	logLevel = Severities[logLevel];
+
 	const formatCurrentTime = () => {
 		const d = new Date();
 		return `[${d.toLocaleDateString()} ${d.toLocaleTimeString()}:${d.getMilliseconds()}]`;
