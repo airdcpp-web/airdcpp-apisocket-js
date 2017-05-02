@@ -14,6 +14,7 @@ When communicating with the API locally, it's recommended to write an extension 
 ## Usage
 
 [GUIDE.md](https://github.com/airdcpp-web/airdcpp-apisocket-js/blob/master/GUIDE.md)
+[AirDC++ Web API reference](http://apidocs.airdcpp.net)
 
 ## Minimal example
 
@@ -43,11 +44,6 @@ socket.onConnected = function() {
 
 socket.connect();
 ```
-
-## API reference
-
-API reference is available at http://apidocs.airdcpp.net
-
 
 ## Table of contents
 
