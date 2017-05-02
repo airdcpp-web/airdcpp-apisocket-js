@@ -1,8 +1,8 @@
 # airdcpp-apisocket-js [![Travis][build-badge]][build] [![npm package][npm-badge]][npm] [![Coverage][coverage-badge]][coverage] [![Code climate][climate-badge]][climate]
 
-Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-webapi).
+JavaScript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-webapi) for [Node.js](https://nodejs.org) and web browsers. 
 
-**NOTE**: this version of airdcpp-apisocket can only be used with an application that supports [AirDC++ Web API v1](http://docs.airdcpp.apiary.io/#introduction/version-history) (AirDC++ Web Client 2.0.0+ / AirDC++ 3.40+). For older versions, please use the [0.1.x branch](https://github.com/airdcpp-web/airdcpp-apisocket-js/tree/0.1.x) instead.
+When communicating with the API locally, it's recommended to write an extension that is managed by the application itself instead of using this library directly. See the [airdcpp-create-extension starter project](https://github.com/airdcpp-web/airdcpp-create-extension) for more information.
 
 ## Features
 
@@ -10,6 +10,10 @@ Javascript connector for [AirDC++ Web API](https://github.com/airdcpp/airdcpp-we
 - Provides a promise-based interface for making API requests
 - Manages subscriptions for all socket listener events
 - Provides configurable console logging capabilities
+
+## Usage
+
+[GUIDE.md](https://github.com/airdcpp-web/airdcpp-apisocket-js/blob/master/GUIDE.md)
 
 ## Minimal example
 
@@ -44,6 +48,7 @@ socket.connect();
 
 API reference is available at http://apidocs.airdcpp.net
 
+
 ## Table of contents
 
  * [Getting started](#getting-started)
@@ -52,11 +57,13 @@ API reference is available at http://apidocs.airdcpp.net
  
 Please post any bugs or questions you may have on the issue tracker.
 
+
 ## Prerequisites
 
 You must have [Node.js](https://nodejs.org) installed for using the API connector.
 
 If you are going to use the connector in browser environment, see [AirDC++ Web UI](https://github.com/airdcpp-web/airdcpp-webui/blob/master/src/services/SocketService.js) for example usage.
+
 
 ## Getting started
 
@@ -66,6 +73,7 @@ Add the connector as dependency to an existing Node project by running
 
 If you are unfamiliar with writing code for [Node.js](https://nodejs.org), you can check out [this beginners tutorial](http://blog.modulus.io/absolute-beginners-guide-to-nodejs).
 
+
 ## Development tips
 
 ### Hubsofts
@@ -73,6 +81,7 @@ If you are unfamiliar with writing code for [Node.js](https://nodejs.org), you c
 The client is recommended to be used with ADC hubsofts as all API calls (or some of their options) can't be used with NMDC hubs.
 
 Certain ADC hubsofts, such as Flexhub and Luadch don't follow the ADC protocol specs, which may cause unexplained issues when communicating with other clients.
+
 
 **Recommended hubsofts for development:**
 
@@ -88,22 +97,6 @@ If you are using AirDC++ Web Client, you can start the client with ``--cdm-clien
 
 The ADC protocol specifications can be found from http://adc.sourceforge.net/ADC.html
 
-## Running the examples
-
-There are a few examples demonstrating how to use the connector in real projects. The examples are simplified and generally not meant for regular use.
-
-Examples require Node.js (version 7 or newer) and [AirDC++ Web Client](https://airdcpp-web.github.io) 2.0.0 or newer to work. Please note the [recommended hubsofts to use](#hubsofts) as the examples may not work with all hubsofts.
-
-1. Clone the repository
-2. Install dependencies and build the project by running the following commands in the main directory
-
-    ```
-    npm install
-    npm run build
-    ``` 
-3. Create a copy of ``examples/settings.js.example`` and rename it to ``examples/settings.js``
-4. Edit ``examples/settings.js`` to contain the correct API address and user credentials
-5. Run the wanted example with ``node --harmony examples/replace_with_example_name.js`` (Debian/Ubuntu users may have to use `nodejs` instead of `node`). The ``--harmony`` flag is currently needed with Node.js 7 due to async/await being used in the examples.
 
 [build-badge]: https://img.shields.io/travis/airdcpp-web/airdcpp-apisocket-js/master.svg?style=flat-square
 [build]: https://travis-ci.org/airdcpp-web/airdcpp-apisocket-js
