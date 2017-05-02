@@ -13,8 +13,8 @@ When communicating with the API locally, it's recommended to write an extension 
 
 ## Usage
 
-[GUIDE.md](https://github.com/airdcpp-web/airdcpp-apisocket-js/blob/master/GUIDE.md)
-[AirDC++ Web API reference](http://apidocs.airdcpp.net)
+- [GUIDE.md](https://github.com/airdcpp-web/airdcpp-apisocket-js/blob/master/GUIDE.md)
+- [AirDC++ Web API reference](http://apidocs.airdcpp.net)
 
 ## Minimal example
 
