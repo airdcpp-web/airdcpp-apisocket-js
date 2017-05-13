@@ -1,4 +1,4 @@
-import { authData, getMockServer, getSocket } from './helpers';
+import { authData, getMockServer, getSocket, mockConsole } from './helpers';
 import MockDate from 'mockdate';
 import ApiConstants from '../ApiConstants';
 
@@ -14,24 +14,19 @@ const getConnectedSocket = async (options) => {
 };
 
 describe('socket', () => {
-	const originalWarn = console.warn;
-	const originalError = console.error;
-	const originalLog = console.log;
-
 	beforeEach(() => {
 		server = getMockServer();
-		console.warn = jest.fn((a1, a2, a3, a4) => {
-			originalWarn(a1, a2, a3, a4);
-		});
-		console.error = jest.fn((a1, a2, a3, a4) => {
-			originalError(a1, a2, a3, a4);
-		});
 	});
 
 	afterEach(() => {
 		server.stop();
 		jest.useRealTimers();
 		MockDate.reset();
+
+		mockConsole.log.mockClear();
+		mockConsole.info.mockClear();
+		mockConsole.warn.mockClear();
+		mockConsole.error.mockClear();
 	});
 
 	describe('auth', () => {
@@ -47,7 +42,7 @@ describe('socket', () => {
 			expect(response).toEqual(authData);
 			expect(socket.isConnected()).toEqual(true);
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
@@ -67,7 +62,7 @@ describe('socket', () => {
 			expect(error.message).toEqual('Invalid username or password');
 			expect(socket.isConnected()).toEqual(false);
 
-			expect(console.warn.mock.calls.length).toBe(1);
+			expect(mockConsole.warn.mock.calls.length).toBe(1);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
@@ -84,7 +79,7 @@ describe('socket', () => {
 			await socket.addListener('hubs', 'hub_updated', _ => {});
 
 			// Dummy pending request
-			socket.delete('dummy').catch(error => {
+			socket.delete('dummyLogoutDelete').catch(error => {
 				expect(error.message).toEqual('Socket disconnected');
 			});
 
@@ -98,7 +93,7 @@ describe('socket', () => {
 			expect(socket.hasListeners()).toEqual(false);
 			expect(socket.getPendingRequestCount()).toEqual(0);
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 	});
@@ -116,16 +111,15 @@ describe('socket', () => {
 			server.stop();
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
-			expect(console.error.mock.calls.length).toBe(1);
+			expect(mockConsole.error.mock.calls.length).toBe(1);
 
 			server = getMockServer();
-			console.error(ApiConstants.CONNECT_URL);
 			server.addDataHandler('POST', ApiConstants.CONNECT_URL, null);
 			jest.runOnlyPendingTimers();
 			jest.runOnlyPendingTimers();
 
 			expect(socket.isConnected()).toEqual(true);
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
@@ -139,7 +133,7 @@ describe('socket', () => {
 			await socket.reconnect();
 			expect(socket.isConnected()).toEqual(true);
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 
@@ -150,15 +144,21 @@ describe('socket', () => {
 			socket.disconnect();
 			expect(socket.isConnected()).toEqual(false);
 
+			// Fail the initial reconnect attempt
 			server.addErrorHandler('POST', ApiConstants.CONNECT_URL, 'Invalid session token', 400);
 			jest.runOnlyPendingTimers();
-
 			socket.reconnect();
+
+			// Re-send credentials
 			jest.runOnlyPendingTimers();
 
 			expect(socket.isConnected()).toEqual(true);
 
-			expect(console.warn.mock.calls.length).toBe(1);
+			expect(mockConsole.error.mock.calls.length).toBe(0);
+
+			expect(mockConsole.warn.mock.calls.length).toBe(1);
+			expect(mockConsole.warn.mock.calls[0].indexOf('\u001b[33m\u001b[1m400\u001b[22m\u001b[39m')).toBe(2);
+
 			expect(socket.getPendingRequestCount()).toBe(0);
 		});
 	});
@@ -176,7 +176,7 @@ describe('socket', () => {
 			MockDate.set(Date.now() + 35000);
 			socket.reportRequestTimeouts();
 
-			expect(console.warn.mock.calls.length).toBe(2);
+			expect(mockConsole.warn.mock.calls.length).toBe(2);
 		});
 	});
 
@@ -214,7 +214,7 @@ describe('socket', () => {
 			expect(commonSubscriptionCallback.mock.calls.length).toBe(2);
 			expect(entitySubscriptionCallback.mock.calls.length).toBe(1);
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 		});
 
 		test('should handle listener removal', async () => {
@@ -247,7 +247,7 @@ describe('socket', () => {
 
 			expect(socket.hasListeners()).toBe(false);
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 		});
 
 		test('should handle view updates', async () => {
@@ -260,7 +260,7 @@ describe('socket', () => {
 			removeListener();
 
 			expect(socket.hasListeners()).toBe(false);
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 		});
 	});
 
@@ -309,28 +309,24 @@ describe('socket', () => {
 				expect(socket.hasListeners()).toBe(false);
 			}
 
-			expect(console.warn.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(0);
 		});
 	});
 
 	describe('logging', () => {
 		test('should respect log levels', async () => {
-			console.log = jest.fn();
-
 			const socket = await getConnectedSocket({
 				logLevel: 'warn'
 			});
 
 			socket.disconnect(true);
-			await socket.delete('dummy').catch(error => {
+			await socket.delete('dummyLogDeleteWarning').catch(error => {
 				
 			});
 
-			expect(console.error.mock.calls.length).toBe(0);
-			expect(console.warn.mock.calls.length).toBe(1);
-			expect(console.log.mock.calls.length).toBe(0);
-
-			console.log = originalLog;
+			expect(mockConsole.error.mock.calls.length).toBe(0);
+			expect(mockConsole.warn.mock.calls.length).toBe(1);
+			expect(mockConsole.log.mock.calls.length).toBe(0);
 		});
 	});
 });

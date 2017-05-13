@@ -1,11 +1,26 @@
 import Socket from '../NodeSocket';
 import { WebSocket, Server } from 'mock-socket';
 
+const mockConsole = {
+	log: jest.fn((a1, a2, a3, a4) => {
+		//console.log(a1, a2, a3, a4);
+	}),
+	info: jest.fn((a1, a2, a3, a4) => {
+		//console.info(a1, a2, a3, a4);
+	}),
+	warn: jest.fn((a1, a2, a3, a4) => {
+		console.warn(a1, a2, a3, a4);
+	}),
+	error: jest.fn((a1, a2, a3, a4) => {
+		console.error(a1, a2, a3, a4);
+	}),
+};
 
 const defaultOptions = {
 	username: 'test',
 	password: 'test',
 	url: 'ws://localhost:7171/api/v1/',
+	loggerOutput: mockConsole,
 };
 
 const authData = {
@@ -74,4 +89,4 @@ const getMockServer = () => {
 	return mockServer;
 };
 
-export { authData, getMockServer, getSocket };
+export { authData, getMockServer, getSocket, mockConsole };

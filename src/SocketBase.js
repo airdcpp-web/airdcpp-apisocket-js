@@ -60,7 +60,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		if (authToken && options.autoReconnect && !disconnected) {
 			setTimeout(_ => {
 				socket.reconnect()
-					.catch((error) => console.error('Reconnect failed for a closed socket', error.message));
+					.catch(error => logger.error('Reconnect failed for a closed socket', error.message));
 			});
 		}
 	};
@@ -179,7 +179,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		};
 
 		ws.onerror = (event) => {
-			logger.info('Connecting socket failed');
+			logger.error('Connecting socket failed');
 			scheduleReconnect();
 		};
 	};

@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import isBrowser from 'is-in-browser';
+import invariant from 'invariant';
 
 export const LOG_NONE = 'none';
 export const LOG_ERROR = 'error';
@@ -18,8 +19,13 @@ const Severities = {
 
 const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
-const Logger = ({ logLevel = LOG_VERBOSE }) => {
+const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 	logLevel = Severities[logLevel];
+
+	invariant(
+		loggerOutput.log && loggerOutput.info && loggerOutput.warn && loggerOutput.error,
+		'Invalid loggerOutput provided'
+	);
 
 	const formatCurrentTime = () => {
 		const d = new Date();
@@ -37,7 +43,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 			];
 		}
 
-		printHandler.apply(console, printableArgs);
+		printHandler.apply(loggerOutput, printableArgs);
 	};
 
 	const Impl = {
@@ -46,23 +52,15 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 				return;
 			}
 
-			print(arguments, console.log, chalk.gray);
+			print(arguments, loggerOutput.log, chalk.gray);
 		},
-
-		/*success() {
-			if (logLevel < Severities[LOG_INFO]) {
-				return;
-			}
-
-			print(arguments, console.info, chalk.green);
-		},*/
 
 		info() {
 			if (logLevel < Severities[LOG_INFO]) {
 				return;
 			}
 
-			print(arguments, console.info, chalk.white.bold);
+			print(arguments, loggerOutput.info, chalk.white.bold);
 		},
 
 		warn() {
@@ -70,7 +68,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 				return;
 			}
 
-			print(arguments, console.warn, chalk.yellow.bold);
+			print(arguments, loggerOutput.warn, chalk.yellow.bold);
 		},
 
 		error() {
@@ -78,7 +76,7 @@ const Logger = ({ logLevel = LOG_VERBOSE }) => {
 				return;
 			}
 
-			print(arguments, console.warn, chalk.red.bold);
+			print(arguments, loggerOutput.error, chalk.red.bold);
 		},
 	};
 
