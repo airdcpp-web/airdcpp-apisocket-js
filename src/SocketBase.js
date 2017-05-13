@@ -160,6 +160,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		ws = new WebSocketImpl(options.url);
 
 		const scheduleReconnect = () => {
+			ws = null;
 			if (!reconnectOnFailure) {
 				reject('Cannot connect to the server');
 				return;
@@ -202,6 +203,10 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		return !!(ws && !isConnected());
 	};
 
+	const isActive = () => {
+		return !!ws;
+	};
+
 	// Disconnects the socket but keeps the session token
 	const disconnect = (autoConnect = false) => {
 		if (!ws) {
@@ -221,7 +226,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		},
 
 		connect(username, password, reconnectOnFailure = true) {
-			if (ws) {
+			if (isActive()) {
 				throw 'Connect may only be used for a closed socket';
 			}
 
@@ -232,7 +237,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 
 		// Connect and attempt to associate the socket with an existing session
 		reconnect(token, reconnectOnFailure = true) {
-			if (ws) {
+			if (isActive()) {
 				throw 'Reconnect may only be used for a closed socket';
 			}
 
@@ -288,6 +293,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		disconnect,
 		isConnecting,
 		isConnected,
+		isActive,
 		logger,
 	};
 

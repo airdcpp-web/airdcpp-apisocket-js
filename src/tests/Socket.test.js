@@ -60,10 +60,37 @@ describe('socket', () => {
 
 			expect(error.code).toEqual(401);
 			expect(error.message).toEqual('Invalid username or password');
-			expect(socket.isConnected()).toEqual(false);
+			expect(socket.isActive()).toEqual(false);
 
 			expect(mockConsole.warn.mock.calls.length).toBe(1);
 			expect(socket.getPendingRequestCount()).toBe(0);
+		});
+
+		test('should handle connect with custom credentials', async () => {
+			server.stop();
+			const socket = getSocket({
+				username: 'dummy',
+				password: 'dummy',
+			});
+
+			// Fail without a server handler with auto reconnect disabled
+			let error;
+			try {
+				await socket.connect(authData.username, authData.password, false);
+			} catch (e) {
+				error = e;
+			}
+
+			expect(error).toEqual('Cannot connect to the server');
+			expect(socket.isActive()).toEqual(false);
+
+			// Valid connect attempt
+			server = getMockServer();
+			server.addDataHandler('POST', ApiConstants.LOGIN_URL, authData);
+
+			await socket.connect(authData.username, authData.password, false);
+
+			expect(socket.isConnected()).toEqual(true);
 		});
 
 		test('should handle logout', async () => {
@@ -89,7 +116,7 @@ describe('socket', () => {
 			expect(sessionResetCallback.mock.calls.length).toBe(1);
 			expect(disconnectedCallback.mock.calls.length).toBe(1);
 
-			expect(socket.isConnected()).toEqual(false);
+			expect(socket.isActive()).toEqual(false);
 			expect(socket.hasListeners()).toEqual(false);
 			expect(socket.getPendingRequestCount()).toEqual(0);
 
@@ -105,7 +132,7 @@ describe('socket', () => {
 			jest.useFakeTimers();
 
 			socket.disconnect(true);
-			expect(socket.isConnected()).toEqual(false);
+			expect(socket.isActive()).toEqual(false);
 
 			// Let it fail once
 			server.stop();
@@ -142,7 +169,7 @@ describe('socket', () => {
 
 			jest.useFakeTimers();
 			socket.disconnect();
-			expect(socket.isConnected()).toEqual(false);
+			expect(socket.isActive()).toEqual(false);
 
 			// Fail the initial reconnect attempt
 			server.addErrorHandler('POST', ApiConstants.CONNECT_URL, 'Invalid session token', 400);
