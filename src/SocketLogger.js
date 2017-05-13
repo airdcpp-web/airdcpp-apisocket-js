@@ -19,12 +19,12 @@ const Severities = {
 
 const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
-const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
+const Logger = ({ logLevel = LOG_VERBOSE, logOutput = console }) => {
 	logLevel = Severities[logLevel];
 
 	invariant(
-		loggerOutput.log && loggerOutput.info && loggerOutput.warn && loggerOutput.error,
-		'Invalid loggerOutput provided'
+		logOutput.log && logOutput.info && logOutput.warn && logOutput.error,
+		'Invalid logOutput provided'
 	);
 
 	const formatCurrentTime = () => {
@@ -43,7 +43,7 @@ const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 			];
 		}
 
-		printHandler.apply(loggerOutput, printableArgs);
+		printHandler.apply(logOutput, printableArgs);
 	};
 
 	const Impl = {
@@ -52,7 +52,7 @@ const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 				return;
 			}
 
-			print(arguments, loggerOutput.log, chalk.gray);
+			print(arguments, logOutput.log, chalk.gray);
 		},
 
 		info() {
@@ -60,7 +60,7 @@ const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 				return;
 			}
 
-			print(arguments, loggerOutput.info, chalk.white.bold);
+			print(arguments, logOutput.info, chalk.white.bold);
 		},
 
 		warn() {
@@ -68,7 +68,7 @@ const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 				return;
 			}
 
-			print(arguments, loggerOutput.warn, chalk.yellow.bold);
+			print(arguments, logOutput.warn, chalk.yellow.bold);
 		},
 
 		error() {
@@ -76,7 +76,7 @@ const Logger = ({ logLevel = LOG_VERBOSE, loggerOutput = console }) => {
 				return;
 			}
 
-			print(arguments, loggerOutput.error, chalk.red.bold);
+			print(arguments, logOutput.error, chalk.red.bold);
 		},
 	};
 

@@ -20,7 +20,7 @@ const defaultOptions = {
 	username: 'test',
 	password: 'test',
 	url: 'ws://localhost:7171/api/v1/',
-	loggerOutput: mockConsole,
+	logOutput: mockConsole,
 };
 
 const authData = {
