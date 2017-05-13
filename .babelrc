@@ -3,5 +3,10 @@
   "plugins": [
     "transform-async-to-generator",
     "transform-object-assign"
-  ]
+  ],
+  "env": {
+    "test": {
+      "sourceMaps": "inline"
+    }
+  }
 }
