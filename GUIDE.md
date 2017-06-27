@@ -229,9 +229,13 @@ subscription-specific data object (if available) and `entityId` is set only for 
 
 Possible ID when using per-entity subscriptions (filelist, hub, extension...). Events from all entities will be sent if no entity ID is specified.
 
+
 **Return value**
 
 Promise returning a function that will remove the listener when being called. Note that all listeners will be removed automatically when the socket is disconnected.
+
+Note that the function returns asynchronously after receiving confirmation from the application that the event listener has really been added. It's generally safer to wait for the function to return even if you don't need the removal callback before continuing with other actions that expect the listener to be functional and emitting events. As the API is multithreaded and requests may be processed in a different order that they were sent, this will avoid race conditions and events possibly being missed.
+
 
 **Example**
 
@@ -241,6 +245,7 @@ const onMessageReceived = (message, hubId) => {
   console.log(`${message.text} (hub ID: ${hubId})`);
 }
 
+// NOTE: async function
 const removeListener = await socket.addListener('hubs', 'hub_chat_message', onMessageReceived);
 
 // ... other code
@@ -274,6 +279,8 @@ hook-specific data object.
 
 Promise returning a function that will remove the hook when being called. Note that all hooks will be removed automatically when the socket is disconnected.
 
+Note that the function returns asynchronously after receiving confirmation from the application that the hook has really been added. It's generally safer to wait for the function to return even if you don't need the removal callback before continuing with other actions that expect the listener to be functional and emitting events. As the API is multithreaded and requests may be processed in a different order that they were sent, this will avoid race conditions and events possibly being missed.
+
 **Example**
 
 ```js
@@ -286,6 +293,7 @@ const handleIncomingMessage = (message, accept, reject) => {
   }
 }
 
+// NOTE: async function
 const removeHook = await socket.addHook('hubs', 'hub_incoming_message_hook', handleIncomingMessage);
 
 // ... other code
