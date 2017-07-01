@@ -14,8 +14,9 @@
   - [onSessionReset](#onsessionreset)
 - [Logger](#logger)
 - [API requests](#api-requests)
-- [API event handlers](#api-event-handlers)
+- [Event listeners](#event-listeners)
   - [addListener](#addlistener)
+- [Action hooks](#action-hooks)
   - [addHook](#addhook)
 
 
@@ -204,7 +205,7 @@ socket.post('events', {
 
 
 
-## API event handlers
+## Event listeners
 
 ### `addListener`
 
@@ -255,6 +256,10 @@ const removeListener = await socket.addListener('hubs', 'hub_chat_message', onMe
 removeListener();
 
 ```
+
+## Action hooks
+
+Action hooks are meant to be used only if you are going to change the behavior how certain actions/events are being processed by the application (or whether the action/event is being processed at all). Please see the [API docs](https://github.com/airdcpp-web/airdcpp-apidocs/blob/master/communication-protocols.md#action-hooks) for more information about action hooks and how they compare with event listeners.
 
 ### `addHook`
 
