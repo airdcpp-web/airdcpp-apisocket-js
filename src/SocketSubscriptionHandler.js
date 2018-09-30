@@ -13,10 +13,10 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	const getSubscriptionUrl = (moduleUrl, id, event) => {
 		if (id) {
-			return moduleUrl + '/' + id + '/listeners/' + event;
+			return `${moduleUrl}/${id}/listeners/${event}`;
 		}
 
-		return moduleUrl + '/listeners/' + event;
+		return `${moduleUrl}/listeners/${event}`;
 	};
 
 	let subscriptions = {};
@@ -50,10 +50,10 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 	const handleHookAction = (apiModuleUrl, callback, data, completionId) => {
 		//const completionUrl = apiModuleUrl + '/' + completionId;
 		callback(data, completionData => {
-			socket.post(apiModuleUrl + '/' + completionId + '/resolve', completionData)
+			socket.post(`${apiModuleUrl}/${completionId}/resolve`, completionData)
 				.catch(error => logger.error('Failed to complete hook action', apiModuleUrl, error));
 		}, (rejectId, rejectMessage) => {
-			socket.post(apiModuleUrl + '/' + completionId + '/reject', {
+			socket.post(`${apiModuleUrl}/${completionId}/reject`, {
 				reject_id: rejectId,
 				message: rejectMessage,
 			}).catch(error => logger.error('Failed to complete failed hook action', apiModuleUrl, error));
@@ -101,7 +101,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 
 	// Listen to a specific event without sending subscription to the server
 	socket.addViewUpdateListener = (viewName, callback, id) => {
-		const subscriptionId = getEmitId(viewName + '_updated', id);
+		const subscriptionId = getEmitId(`${viewName}_updated`, id);
 		emitter.on(subscriptionId, callback);
 		return () => removeLocalListener(subscriptionId, callback); 
 	};
@@ -133,7 +133,7 @@ const SocketSubscriptionHandler = (socket, logger, { ignoredListenerEvents = [] 
 			throw 'Hook exists';
 		}
 
-		const subscriptionUrl = apiModuleUrl + '/hooks/' + event;
+		const subscriptionUrl = `${apiModuleUrl}/hooks/${event}`;
 
 		callback = handleHookAction.bind(this, subscriptionUrl, callback);
 		emitter.on(subscriptionId, callback);

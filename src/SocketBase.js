@@ -47,7 +47,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 	};
 
 	const onClosed = (event) => {
-		logger.info(event.reason ? 'Websocket was closed: ' + event.reason : 'Websocket was closed');
+		logger.info(event.reason ? `Websocket was closed: ${event.reason}` : 'Websocket was closed');
 
 		requests.onSocketDisconnected();
 		subscriptions.onSocketDisconnected();
@@ -81,7 +81,7 @@ const ApiSocket = (userOptions, WebSocketImpl) => {
 		requests = SocketRequestHandler(socket, logger, options);
 
 		ws.onerror = (event) => {
-			logger.error('Websocket failed: ' + event.reason);
+			logger.error(`Websocket failed: ${event.reason}`);
 		};
 
 		ws.onclose = onClosed;
