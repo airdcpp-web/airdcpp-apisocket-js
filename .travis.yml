@@ -3,6 +3,7 @@ dist: trusty
 language: node_js
 node_js:
 - stable
+- latest
 - 4
 before_install:
 # Update to the latest version as peer dependencies may cause issues otherwise

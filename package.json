@@ -22,6 +22,8 @@
   "scripts": {
     "build": "rimraf dist && tsc -d --outDir dist",
     "clean": "rimraf dist/*",
+    "lint": "tslint --project tslint.json",
+    "lint-fix": "tslint --project tslint.json --fix",
     "prepublishOnly": "npm run build",
     "test": "jest"
   },
