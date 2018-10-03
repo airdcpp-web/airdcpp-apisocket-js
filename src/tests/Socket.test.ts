@@ -172,6 +172,27 @@ describe('socket', () => {
       socket.disconnect();
     });
 
+    test('should cancel autoreconnect', async () => {
+      const socket = await getConnectedSocket();
+
+      jest.useFakeTimers();
+
+      // Disconnect with auto reconnect
+      socket.disconnect(true);
+      expect(socket.isActive()).toEqual(false);
+
+      server.stop();
+
+      // Cancel autoreconnect
+      socket.disconnect();
+
+      // Ensure that nothing happens
+      jest.runOnlyPendingTimers();
+      jest.runOnlyPendingTimers();
+
+      expect(mockConsole.error.mock.calls.length).toBe(0);
+    });
+
     test('should handle manual reconnect', async () => {
       const socket = await getConnectedSocket();
 
@@ -387,19 +408,61 @@ describe('socket', () => {
   });
 
   describe('logging', () => {
-    test('should respect log levels', async () => {
+    const connect = async (logLevel: string) => {
       const socket = await getConnectedSocket({
-        logLevel: 'warn'
+        logLevel,
       });
 
-      socket.disconnect();
+      socket.disconnect(true);
       await socket.delete('dummyLogDeleteWarning').catch(error => {
         //...
       });
 
+      return socket;
+    };
+
+    test('should respect error log level', async () => {
+      const socket = await connect('error');
+
+      expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.info.mock.calls.length).toBe(0);
+      expect(mockConsole.log.mock.calls.length).toBe(0);
+
+      socket.disconnect();
+    });
+    
+    test('should respect warn log level', async () => {
+      const socket = await connect('warn');
+
       expect(mockConsole.error.mock.calls.length).toBe(0);
       expect(mockConsole.warn.mock.calls.length).toBe(1);
+      expect(mockConsole.info.mock.calls.length).toBe(0);
       expect(mockConsole.log.mock.calls.length).toBe(0);
+
+      socket.disconnect();
+    });
+
+    test('should respect info log level', async () => {
+      const socket = await connect('info');
+
+      expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls.length).toBe(1);
+      expect(mockConsole.info.mock.calls.length).toBe(5);
+      expect(mockConsole.log.mock.calls.length).toBe(0);
+
+      socket.disconnect();
+    });
+
+    test('should respect verbose log level', async () => {
+      const socket = await connect('verbose');
+
+      expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls.length).toBe(1);
+      expect(mockConsole.info.mock.calls.length).toBe(5);
+      expect(mockConsole.log.mock.calls.length).toBe(2);
+
+      socket.disconnect();
     });
   });
 });

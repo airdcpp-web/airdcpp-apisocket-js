@@ -73,7 +73,7 @@ const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Log
       if (logLevel < Severities[LOG_VERBOSE]) {
         return;
       }
-      console.log();
+      
       print(arguments, logOutput.log, chalk.gray);
     },
 

@@ -19,11 +19,12 @@ const mockConsole = {
   }),
 };
 
-const defaultSocketOptions = {
+const defaultSocketOptions: APISocketOptions = {
   username: 'test',
   password: 'test',
   url: 'ws://localhost:7171/api/v1/',
   logOutput: mockConsole,
+  logLevel: 'warn',
 };
 
 const authResponse = {

@@ -144,6 +144,10 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
 
     if (authToken && options.autoReconnect && !disconnected) {
       setTimeout(() => {
+        if (disconnected) {
+          return;
+        }
+
         socket!.reconnect()
           .catch((error: ErrorBase) => {
             logger.error('Reconnect failed for a closed socket', error.message);
@@ -345,11 +349,13 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     if (!ws) {
       if (!disconnected) {
         if (!autoConnect) {
-          logger.verbose('Disconnecting a closed socket with auto reconnect enabled');
+          logger.verbose('Disconnecting a closed socket with auto reconnect enabled (cancel reconnect)');
           cancelReconnect();
+        } else {
+          logger.verbose('Attempting to disconnect a closed socket with auto reconnect enabled (continue connecting)');
         }
       } else {
-        logger.warn('Attempting to disconnect a closed socket');
+        logger.warn('Attempting to disconnect a closed socket (ignore)');
         //throw 'Attempting to disconnect a closed socket';
       }
 
