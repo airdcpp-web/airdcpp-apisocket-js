@@ -14,7 +14,6 @@ export interface SocketRequestMethods {
   delete: <ResponseT extends object | void>(path: string) => Promise<ResponseT>;
   get: <ResponseT extends object | void>(path: string) => Promise<ResponseT>;
   getPendingRequestCount: () => number;
-  //cancelPendingRequests: (message: string) => void;
 }
 
 interface RequestResponse<DataT = any> {

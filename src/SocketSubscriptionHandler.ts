@@ -51,26 +51,7 @@ export type HookCallback<DataT extends object = object, CompletionDataT extends 
   reject: HookRejectHandler,
 ) => void;
 
-
-// SOCKET METHODS
-/*export type AddViewUpdateListener<DataT extends object = any> = (
-  viewName: string, callback: SubscriptionCallback<DataT>, entityId?: EntityId
-) => () => void;
-export type AddListener<DataT extends object | void = any> = (
-  apiModuleUrl: string, event: string, callback: SubscriptionCallback<DataT>, entityId?: EntityId
-) => Promise<SubscriptionRemoveHandler>;
-export type AddHook<DataT extends object = any> = (
-  apiModuleUrl: string, 
-  event: SubscriptionIdType, 
-  callback: HookCallback<DataT>, 
-  subscriberInfo: HookSubscriberInfo
-) => Promise<SubscriptionRemoveHandler>;*/
-
-
 export interface SocketSubscriptions {
-  //addViewUpdateListener: AddViewUpdateListener;
-  //addListener: AddListener;
-  //addHook: AddHook;
   addHook: <DataT extends object, CompletionDataT extends object>(
     apiModuleUrl: string, 
     event: SubscriptionIdType, 
@@ -223,7 +204,7 @@ const SocketSubscriptionHandler = (
 
   const getTotalEmitterSubscriptionCount = (): number => {
     return Object.keys(subscriptions)
-      .reduce((reduced, name) => emitter.listenerCount(name), 0);
+      .reduce((reduced, name) => emitter.listenerCount(name) + reduced, 0);
   };
 
   // Public

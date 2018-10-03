@@ -164,9 +164,6 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   };
 
   const setSocketHandlers = () => {
-    //subscriptions = SocketSubscriptionHandler(socket!, logger, options);
-    //requests = SocketRequestHandler(socket!, logger, options);
-
     ws!.onerror = (event) => {
       logger.error(`Websocket failed: ${(event as any).reason}`);
     };
