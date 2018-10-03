@@ -205,6 +205,31 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     );
   };
 
+  // Called after a successful authentication request
+  const onSocketAuthenticated = (data: AuthenticationResponse) => {
+    if (!authToken) {
+      // New session
+      logger.info('Login succeed');
+      authToken = data.auth_token;
+    } else {
+      // Existing session
+      logger.info('Socket associated with an existing session');
+    }
+
+    if (connectedCallback) {
+      // Catch separately as we don't want an infinite reconnect loop
+      try {
+        connectedCallback(data);
+      } catch (e) {
+        console.error('Error in socket connect handler', e.message);
+      }
+
+      requests.onSocketConnected();
+    }
+  };
+
+  // Send API authentication and handle the result
+  // Authentication handler should send the actual authentication request
   const authenticate = (
     resolve: AuthenticationResolver, 
     reject: ErrorHandler, 
@@ -213,28 +238,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   ) => {
     authenticationHandler()
       .then((data: AuthenticationResponse) => {
-        // Authentication succeed
-
-        if (!authToken) {
-          // New session
-          logger.info('Login succeed');
-          authToken = data.auth_token;
-        } else {
-          // Existing session
-          logger.info('Socket associated with an existing session');
-        }
-
-        if (connectedCallback) {
-          // Catch separately as we don't want an infinite reconnect loop
-          try {
-            connectedCallback(data);
-          } catch (e) {
-            console.error('Error in socket connect handler', e.message);
-          }
-
-          requests.onSocketConnected();
-        }
-
+        onSocketAuthenticated(data);
         resolve(data);
       })
       .catch((error: ErrorBase) => {
@@ -264,6 +268,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
       });
   };
 
+  // Authentication handler should send the actual authentication request
   const connectInternal = (
     resolve: AuthenticationResolver, 
     reject: ErrorHandler, 
@@ -301,6 +306,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     };
   };
 
+  // Authentication handler should send the actual authentication request
   const startConnect = (
     authenticationHandler: AuthenticationHandler, 
     reconnectOnFailure: boolean
@@ -324,6 +330,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     return !!(ws && !isConnected());
   };
 
+  // Socket exists
   const isActive = () => {
     return !!ws;
   };
@@ -338,12 +345,12 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     if (!ws) {
       if (!disconnected) {
         if (!autoConnect) {
-          logger.warn('Disconnecting a closed socket with auto reconnect');
+          logger.verbose('Disconnecting a closed socket with auto reconnect enabled');
           cancelReconnect();
         }
       } else {
         logger.warn('Attempting to disconnect a closed socket');
-        throw 'Attempting to disconnect a closed socket';
+        //throw 'Attempting to disconnect a closed socket';
       }
 
       return;
@@ -358,7 +365,9 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     ws.close();
   };
 
-  socket = {	
+  socket = {
+    // Start connect
+    // Username and password are not required if those are available in socket options
     connect: (username?: string, password?: string, reconnectOnFailure = true) => {
       if (isActive()) {
         throw 'Connect may only be used for a closed socket';
