@@ -23,6 +23,13 @@ interface RequestResponse<DataT = any> {
   error: ErrorFull;
 }
 
+export interface Request {
+  path: string;
+  method: string;
+  data: object | undefined;
+  callback_id: number;
+}
+
 interface Callback {
   time: number;
   resolver: PendingResult;
@@ -67,8 +74,8 @@ const SocketRequestHandler = (
     return currentCallbackId;
   };
 
-  const filterPassword = (data: object): object => {
-    if (!data.hasOwnProperty('password')) {
+  const filterPassword = (data: object | undefined): object | undefined => {
+    if (!data || !data.hasOwnProperty('password')) {
       return data;
     }
 
@@ -78,16 +85,18 @@ const SocketRequestHandler = (
     };
   };
 
-  const sendRequest = (path: string, data: any, method: string, authenticating: boolean = false) => {
+  const sendRequest = <DataT extends object | undefined>(
+    method: string, path: string, data?: DataT, authenticating: boolean = false
+  ) => {
     // Pre-checks
-    if (!socket().nativeSocket) {
-      logger.warn(`Attempting to send request without a socket: ${path}`);
-      return Promise.reject('No socket');
-    }
-
     if (!authenticating && !socket().isConnected()) {
       logger.warn(`Attempting to send request on a non-authenticated socket: ${path}`);
       return Promise.reject('Not authorized');
+    }
+
+    if (!socket().nativeSocket) {
+      logger.warn(`Attempting to send request without a socket: ${path}`);
+      return Promise.reject('No socket');
     }
 
     const callbackId = getCallbackId();
@@ -115,7 +124,7 @@ const SocketRequestHandler = (
       method,
       data,
       callback_id: callbackId,
-    };
+    } as Request;
 
     socket().nativeSocket!.send(JSON.stringify(request));
     return resolver.promise;
@@ -149,25 +158,25 @@ const SocketRequestHandler = (
   // Public
   const RequestsPublic: SocketRequestMethods = {
     put: (path, data) => {
-      return sendRequest(path, data, 'PUT');
+      return sendRequest('PUT', path, data, );
     },
   
     patch: (path, data) => {
-      return sendRequest(path, data, 'PATCH');
+      return sendRequest('PATCH', path, data, );
     },
   
     post: (path, data) => {
-      return sendRequest(path, data, 'POST');
+      return sendRequest('POST', path, data);
     },
   
     delete: (path) => {
       //invariant(!data, 'No data is allowed for delete command');
-      return sendRequest(path, null, 'DELETE');
+      return sendRequest('DELETE', path);
     },
   
     get: (path) => {
       //invariant(!data, 'No data is allowed for get command');
-      return sendRequest(path, null, 'GET');
+      return sendRequest('GET', path);
     },
   
     getPendingRequestCount: () => {
@@ -221,7 +230,7 @@ const SocketRequestHandler = (
     },
 
     postAuthenticate(path: string, data: TokenAuthenticationData | CredentialsAuthenticationData) {
-      return sendRequest(path, data, 'POST', true);
+      return sendRequest('POST', path, data, true);
     },
   };
 

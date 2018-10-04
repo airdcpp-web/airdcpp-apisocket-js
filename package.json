@@ -37,9 +37,9 @@
   "devDependencies": {
     "@types/chalk": "^2.2.0",
     "@types/invariant": "^2.2.29",
-    "@types/jest": "^23.3.2",
+    "@types/jest": "^23.3.3",
     "@types/mockdate": "^2.0.0",
-    "@types/node": "^10.11.3",
+    "@types/node": "^10.11.4",
     "jest": "^23.6.0",
     "jest-cli": "^23.6.0",
     "jest-environment-node-debug": "^2.0.0",
