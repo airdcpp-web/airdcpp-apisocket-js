@@ -9,18 +9,16 @@
       "type": "node",
       "request": "launch",
       "port": 5858,
-      "stopOnEntry": false,
-      "runtimeExecutable": null,
-      "sourceMaps": true,
+      //"stopOnEntry": false,
       "runtimeArgs": [
         "--inspect-brk=5858",
-        "./node_modules/jest-cli/bin/jest.js",
-        "-i",
-        "--env",
-        "jest-environment-node-debug"
+        "${workspaceRoot}/node_modules/jest-cli/bin/jest",
+        "--runInBand",
+        "--coverage",
+        "false"
       ],
-      "protocol": "inspector",
-      "cwd": "${workspaceRoot}"
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
     }
 	]
 }
