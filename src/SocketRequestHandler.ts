@@ -2,33 +2,15 @@ import chalk from 'chalk';
 import invariant from 'invariant';
 import Promise, { PendingResult } from './Promise';
 
-import { eventIgnored, IgnoreMatcher } from './utils';
-import { APISocket, ErrorFull } from './SocketBase';
-import { Logger } from './SocketLogger';
+import { eventIgnored } from './utils';
 
+import * as API from './types/api';
+import * as APIInternal from './types/api_internal';
+import * as Options from './types/options';
+import * as Socket from './types/socket';
+import { Logger } from './types/logger';
+import { SocketRequestMethods, ErrorResponse } from './types/requests';
 
-export interface SocketRequestMethods {
-  put: <ResponseT extends object | void>(path: string, data?: object) => Promise<ResponseT>;
-  patch: <ResponseT extends object | void>(path: string, data?: object) => Promise<ResponseT>;
-  post: <ResponseT extends object | void>(path: string, data?: object) => Promise<ResponseT>;
-  delete: <ResponseT extends object | void>(path: string) => Promise<ResponseT>;
-  get: <ResponseT extends object | void>(path: string) => Promise<ResponseT>;
-  getPendingRequestCount: () => number;
-}
-
-interface RequestResponse<DataT = any> {
-  code: number;
-  callback_id: number;
-  data?: DataT;
-  error: ErrorFull;
-}
-
-export interface Request {
-  path: string;
-  method: string;
-  data: object | undefined;
-  callback_id: number;
-}
 
 interface Callback {
   time: number;
@@ -36,25 +18,11 @@ interface Callback {
   ignored: boolean;
 }
 
-export interface SocketRequestOptions {
-  ignoredRequestPaths?: IgnoreMatcher;
-  requestTimeout?: number;
-}
-
-export interface CredentialsAuthenticationData {
-  username: string;
-  password: string;
-  max_inactivity?: number;
-}
-
-export interface TokenAuthenticationData {
-  auth_token: string;
-}
 
 const SocketRequestHandler = (
-  socket: () => APISocket, 
+  socket: () => Socket.APISocket,
   logger: Logger, 
-  { requestTimeout = 30, ignoredRequestPaths }: SocketRequestOptions
+  { requestTimeout = 30, ignoredRequestPaths }: Options.SocketRequestOptions
 ) => {
 
   let callbacks: { [key: number]: Callback } = {};
@@ -106,7 +74,12 @@ const SocketRequestHandler = (
 
     const ignored = eventIgnored(path, ignoredRequestPaths);
     if (!ignored) {
-      logger.verbose(chalk.white.bold(callbackId.toString()), method, path, data ? filterPassword(data) : '(no data)');
+      logger.verbose(
+        chalk.white.bold(callbackId.toString()), 
+        method, 
+        path, 
+        data ? filterPassword(data) : '(no data)'
+      );
     }
 
     // Callback
@@ -124,7 +97,7 @@ const SocketRequestHandler = (
       method,
       data,
       callback_id: callbackId,
-    } as Request;
+    } as APIInternal.OutgoingRequest;
 
     socket().nativeSocket!.send(JSON.stringify(request));
     return resolver.promise;
@@ -188,6 +161,10 @@ const SocketRequestHandler = (
     reportRequestTimeouts: reportTimeouts, // internal method for testing
   });
 
+  const formatFieldError = (error: API.FieldError) => {
+    return error.field && error.code ? `${error.field} (${error.code})` : '';
+  };
+
   // Shared for the socket
   const RequestsInternal = {
     onSocketConnected() {
@@ -201,7 +178,7 @@ const SocketRequestHandler = (
       clearTimeout(timeoutReportInterval);
     },
 
-    handleMessage(messageObj: RequestResponse) {
+    handleMessage(messageObj: APIInternal.RequestSuccessResponse | APIInternal.RequestErrorResponse) {
       const id = messageObj.callback_id;
       if (!callbacks.hasOwnProperty(id)) {
         logger.warn('No pending request for an API response', id, messageObj);
@@ -209,27 +186,30 @@ const SocketRequestHandler = (
       }
 
       if (messageObj.code >= 200 && messageObj.code <= 204) {
+        const { data } = messageObj as APIInternal.RequestSuccessResponse;
         if (!callbacks[id].ignored) {
-          logger.verbose(chalk.green(id.toString()), 'SUCCEEDED', messageObj.data ? messageObj.data : '(no data)');
+          logger.verbose(chalk.green(id.toString()), 'SUCCEEDED', data ? data : '(no data)');
         }
 
-        callbacks[id].resolver.resolve(messageObj.data);
+        callbacks[id].resolver.resolve(data);
       } else {
-        const { error, code } = messageObj;
+        const { error, code }: APIInternal.RequestErrorResponse = messageObj as APIInternal.RequestErrorResponse;
         invariant(!!error, 'Invalid error response received from the API');
-        logger.warn(id, code, error.message, error.field ? error.field : '');
-        
-        callbacks[id].resolver.reject({ 
-          message: error.message, 
-          code, 
-          json: error 
-        });
+        if (!!error) {
+          logger.warn(id, code, error.message, formatFieldError(error as API.FieldError));
+          
+          callbacks[id].resolver.reject({ 
+            message: error.message, 
+            code, 
+            json: error 
+          } as ErrorResponse);
+        }
       }
 
       delete callbacks[id];
     },
 
-    postAuthenticate(path: string, data: TokenAuthenticationData | CredentialsAuthenticationData) {
+    postAuthenticate(path: string, data: API.TokenAuthenticationData | API.CredentialsAuthenticationData) {
       return sendRequest('POST', path, data, true);
     },
   };

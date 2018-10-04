@@ -1,99 +1,35 @@
 import invariant from 'invariant';
 import { EventEmitter } from 'events';
 
-import { eventIgnored, IgnoreMatcher } from './utils';
-import { APISocket, ErrorResponse } from './SocketBase';
-import { Logger } from './SocketLogger';
+import { eventIgnored } from './utils';
 import Promise, { PendingResult } from './Promise';
 
+import { Logger } from './types/logger';
+import * as API from './types/api';
+import * as APIInternal from './types/api_internal';
+import * as Options from './types/options';
+import * as Requests from './types/requests';
+import * as Socket from './types/socket';
+import * as Subscriptions from './types/subscriptions';
 
-type CompletionIdType = number;
-type SubscriptionIdType = string;
-type EntityId = string | number;
-
-export interface SubscriptionEvent<DataT = any> {
-  event: string;
-  data: DataT;
-  completion_id?: CompletionIdType;
-  id?: EntityId;
-}
 
 interface PendingSubscription { 
   resolver: PendingResult;
-  removeHandler: SubscriptionRemoveHandler; 
+  removeHandler: Subscriptions.SubscriptionRemoveHandler; 
 }
-
-
-// OPTIONS
-export interface SocketSubscriptionOptions {
-  ignoredListenerEvents?: IgnoreMatcher;
-}
-
-
-// SUBSCRIPTIONS
-export type SubscriptionRemoveHandler = (sendApi?: boolean) => void;
-
-export type SubscriptionCallback<DataT extends object | void = object> = (data: DataT) => void;
-
-
-// HOOKS
-export interface HookSubscriberInfo {
-  id: string;
-  name: string;
-}
-
-export type HookRejectHandler = (rejectId: string, rejectMessage: string) => void;
-export type HookAcceptHandler<DataT extends object> = (data: DataT) => void;
-
-export type HookCallback<DataT extends object = object, CompletionDataT extends object = object> = (
-  data: DataT,
-  accept: HookAcceptHandler<CompletionDataT>,
-  reject: HookRejectHandler,
-) => void;
-
-export interface SocketSubscriptions {
-  addHook: <DataT extends object, CompletionDataT extends object>(
-    apiModuleUrl: string, 
-    event: SubscriptionIdType, 
-    callback: HookCallback<DataT, CompletionDataT>, 
-    subscriberInfo: HookSubscriberInfo
-  ) => Promise<SubscriptionRemoveHandler>;
-
-  addListener: <DataT extends object | void>(
-    apiModuleUrl: string, 
-    event: string, 
-    callback: SubscriptionCallback<DataT>, 
-    entityId?: EntityId
-  ) => Promise<SubscriptionRemoveHandler>;
-
-  addViewUpdateListener: <DataT extends object | void>(
-    viewName: string, 
-    callback: SubscriptionCallback<DataT>, 
-    entityId?: EntityId
-  ) => () => void;
-
-  hasListeners: () => boolean;
-  getPendingSubscriptionCount: () => number;
-}
-
-export type AddHook = SocketSubscriptions['addHook'];
-export type AddListener = SocketSubscriptions['addListener'];
-export type AddViewUpdateListener = SocketSubscriptions['addViewUpdateListener'];
-
-
 
 const SocketSubscriptionHandler = (
-  socket: () => APISocket, 
+  socket: () => Socket.APISocket, 
   logger: Logger, 
-  { ignoredListenerEvents = [] }: SocketSubscriptionOptions
+  { ignoredListenerEvents = [] }: Options.SocketSubscriptionOptions
 ) => {
   // Internal
-  const getEmitId = (event: string, id?: EntityId) => {
+  const getEmitId = (event: string, id?: API.EntityId) => {
     invariant(id !== 0, 'Entity ID "0" is not allowed');
     return id ? (event + id) : event;
   };
 
-  const getSubscriptionUrl = (moduleUrl: string, id: EntityId | undefined, event: string) => {
+  const getSubscriptionUrl = (moduleUrl: string, id: API.EntityId | undefined, event: string) => {
     if (id) {
       return `${moduleUrl}/${id}/listeners/${event}`;
     }
@@ -109,8 +45,8 @@ const SocketSubscriptionHandler = (
 
   const removeSocketListener = (
     subscriptionUrl: string, 
-    subscriptionId: SubscriptionIdType, 
-    callback: HookCallback<any, any> | SubscriptionCallback<any>, 
+    subscriptionId: string, 
+    callback: Subscriptions.HookCallback<any, any> | Subscriptions.SubscriptionCallback<any>, 
     sendApi: boolean
   ) => {
     if (!socket().isConnected()) {
@@ -123,7 +59,10 @@ const SocketSubscriptionHandler = (
     if (subscriptions[subscriptionId] === 0) {
       if (sendApi && socket().isConnected()) {
         socket().delete(subscriptionUrl)
-          .catch((error: ErrorResponse) => logger.error('Failed to remove socket listener', subscriptionUrl, error));
+          .catch(
+            (error: Requests.ErrorResponse) => {
+              logger.error('Failed to remove socket listener', subscriptionUrl, error);
+            });
       }
 
       delete subscriptions[subscriptionId];
@@ -131,14 +70,17 @@ const SocketSubscriptionHandler = (
   };
 
   const removeLocalListener = (
-    subscriptionId: SubscriptionIdType, 
-    callback: HookCallback<any, any> | SubscriptionCallback<any>
+    subscriptionId: string, 
+    callback: Subscriptions.HookCallback<any, any> | Subscriptions.SubscriptionCallback<any>
   ) => {
     emitter.removeListener(subscriptionId, callback);
   };
 
   const handleHookAction = <DataT extends object, CompletionDataT extends object>(
-    apiModuleUrl: string, callback: HookCallback<DataT, CompletionDataT>, data: DataT, completionId: CompletionIdType
+    apiModuleUrl: string, 
+    callback: Subscriptions.HookCallback<DataT, CompletionDataT>, 
+    data: DataT, 
+    completionId: APIInternal.CompletionIdType
   ) => {
     callback(
       data, 
@@ -155,7 +97,7 @@ const SocketSubscriptionHandler = (
     );
   };
 
-  const onSubscriptionAddSucceeded = (subscriptionId: SubscriptionIdType) => {
+  const onSubscriptionAddSucceeded = (subscriptionId: string) => {
     const pending = pendingSubscriptions[subscriptionId];
     pending.forEach(pendingItem => pendingItem.resolver.resolve(pendingItem.removeHandler));
 
@@ -163,7 +105,7 @@ const SocketSubscriptionHandler = (
     delete pendingSubscriptions[subscriptionId];
   };
 
-  const onSubscriptionAddFailed = (subscriptionId: SubscriptionIdType, error: ErrorResponse) => {
+  const onSubscriptionAddFailed = (subscriptionId: string, error: Requests.ErrorResponse) => {
     const pending = pendingSubscriptions[subscriptionId];
     pending.forEach(pendingItem => pendingItem.resolver.reject(error));
 
@@ -172,10 +114,10 @@ const SocketSubscriptionHandler = (
 
   const addPendingEntry = <DataT extends object>(
     subscriptionUrl: string, 
-    subscriptionId: SubscriptionIdType, 
-    callback: HookCallback<any, any> | SubscriptionCallback<any>, 
+    subscriptionId: string, 
+    callback: Subscriptions.HookCallback<any, any> | Subscriptions.SubscriptionCallback<any>, 
     data?: DataT
-  ): Promise<SubscriptionRemoveHandler> => {
+  ): Promise<Subscriptions.SubscriptionRemoveHandler> => {
     const removeHandler = (sendApi = true) => removeSocketListener(subscriptionUrl, subscriptionId, callback, sendApi);
 
     if (!subscriptions[subscriptionId]) {
@@ -210,7 +152,7 @@ const SocketSubscriptionHandler = (
   // Public
 
   // Listen to a specific event without sending subscription to the server
-  const SocketSubscriptionsPublic: SocketSubscriptions = {
+  const SocketSubscriptionsPublic: Subscriptions.SocketSubscriptions = {
     addViewUpdateListener: (viewName, callback, entityId) => {
       const subscriptionId = getEmitId(`${viewName}_updated`, entityId);
       emitter.on(subscriptionId, callback);
@@ -234,11 +176,11 @@ const SocketSubscriptionHandler = (
       return Object.keys(subscriptions).length > 0 || getTotalEmitterSubscriptionCount() > 0;
     },
   
-    addHook: <DataT extends object, CompletionDataT extends object>(
+    addHook: <DataT extends object, CompletionDataT extends object | undefined>(
       apiModuleUrl: string, 
-      event: SubscriptionIdType, 
-      callback: HookCallback<DataT, CompletionDataT>, 
-      subscriberInfo: HookSubscriberInfo
+      event: string, 
+      callback: Subscriptions.HookCallback<DataT, CompletionDataT>, 
+      subscriberInfo: Subscriptions.HookSubscriberInfo
     ) => {
       if (!socket().isConnected()) {
         throw 'Hooks can be added only for a connected socket';
@@ -269,7 +211,7 @@ const SocketSubscriptionHandler = (
       subscriptions = {};
     },
 
-    handleMessage(message: SubscriptionEvent) {
+    handleMessage(message: APIInternal.IncomingSubscriptionEvent) {
       const ignored = eventIgnored(message.event, ignoredListenerEvents);
       if (message.completion_id) {
         if (!ignored) {

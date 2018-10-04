@@ -5,11 +5,9 @@ import { authResponse,
 } from './helpers';
 
 import ApiConstants from '../ApiConstants';
-import { 
-  HookCallback, 
-  SubscriptionEvent, 
-  HookSubscriberInfo 
-} from '../SocketSubscriptionHandler';
+
+import { HookCallback, HookSubscriberInfo } from '../types/subscriptions';
+import { IncomingSubscriptionEvent } from '../types/api_internal';
 
 import * as MockDate from 'mockdate';
 
@@ -270,7 +268,7 @@ describe('socket', () => {
     };
 
     const entityId = 1;
-    const entityData: SubscriptionEvent = {
+    const entityData: IncomingSubscriptionEvent = {
       ...commonData,
       id: entityId,
     };
@@ -352,7 +350,7 @@ describe('socket', () => {
   });
 
   describe('hooks', () => {
-    const hookEventData: SubscriptionEvent = {
+    const hookEventData: IncomingSubscriptionEvent = {
       event: 'queue_bundle_finished_hook',
       data: {},
       completion_id: 1,

@@ -2,6 +2,10 @@ import chalk from 'chalk';
 import isBrowser from 'is-in-browser';
 import invariant from 'invariant';
 
+import * as Options from './types/options';
+import { Logger } from './types/logger';
+
+
 export const LOG_NONE = 'none';
 export const LOG_ERROR = 'error';
 export const LOG_WARN = 'warn';
@@ -16,32 +20,9 @@ const Severities = {
   [LOG_VERBOSE]: 3,
 };
 
-
-export interface Logger {
-  verbose: (message?: any, ...optionalParams: any[]) => void;
-  info: (message?: any, ...optionalParams: any[]) => void;
-  warn: (message?: any, ...optionalParams: any[]) => void;
-  error: (message?: any, ...optionalParams: any[]) => void;
-}
-
-type PrintHandler = (...optionalParams: any[]) => void;
-
-export interface LogOutput {
-  log: PrintHandler;
-  info: PrintHandler;
-  warn: PrintHandler;
-  error: PrintHandler;
-}
-
-export interface LoggerOptions {
-  logLevel?: string;
-  logOutput?: LogOutput;
-}
-
-
 const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
 
-const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: LoggerOptions) => {
+const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Options.LoggerOptions) => {
   const logLevel = Severities[logSetting];
 
   invariant(
@@ -54,7 +35,7 @@ const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Log
     return `[${d.toLocaleDateString()} ${d.toLocaleTimeString()}:${d.getMilliseconds()}]`;
   };
 
-  const print = (args: IArguments, printHandler: PrintHandler, argFormat: (arg: string) => string) => {
+  const print = (args: IArguments, printHandler: Options.PrintHandler, argFormat: (arg: string) => string) => {
     let printableArgs = [ ...Array.prototype.slice.call(args) ];
 
     if (allowFormatArgs && argFormat) {

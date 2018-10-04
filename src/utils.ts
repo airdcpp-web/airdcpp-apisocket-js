@@ -1,6 +1,7 @@
-export type IgnoreMatcher = string[] | RegExp;
+import * as Options from './types/options';
 
-export const eventIgnored = (path: string, ignoredEvents?: IgnoreMatcher) => {
+
+export const eventIgnored = (path: string, ignoredEvents?: Options.IgnoreMatcher) => {
   if (!ignoredEvents) {
     return false;
   }

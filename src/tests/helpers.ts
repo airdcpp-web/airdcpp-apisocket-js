@@ -1,8 +1,12 @@
 import APISocket from '../NodeSocket';
-import { APISocketOptions } from '../SocketBase';
 
 //@ts-ignore
 import { WebSocket, Server } from 'mock-socket';
+
+import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal';
+import * as Options from '../types/options';
+
+
 
 const mockConsole = {
   log: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
@@ -19,7 +23,7 @@ const mockConsole = {
   }),
 };
 
-const defaultSocketOptions: APISocketOptions = {
+const defaultSocketOptions: Options.APISocketOptions = {
   username: 'test',
   password: 'test',
   url: 'ws://localhost:7171/api/v1/',
@@ -42,7 +46,7 @@ const authResponse = {
 
 declare type Omit<T, K> = Pick<T, Exclude<keyof T, K>>;
 
-export type MockSocketOptions = Omit<APISocketOptions, 'username' | 'password' | 'url'> & {
+export type MockSocketOptions = Omit<Options.APISocketOptions, 'username' | 'password' | 'url'> & {
   username?: string;
   password?: string;
   url?: string;
@@ -65,9 +69,14 @@ type Callback = (requestData: object) => void;
 const getMockServer = () => {
   const mockServer = new Server(defaultSocketOptions.url);
 
-  const addServerHandler = (method: string, path: string, responseData: object, callback: Callback) => {
+  const addServerHandler = (
+    method: string, 
+    path: string, 
+    responseData: Omit<RequestSuccessResponse, 'callback_id'> | Omit<RequestErrorResponse, 'callback_id'>, 
+    callback: Callback
+  ) => {
     const handler = (jsonRequest: string) => {
-      const requestObj = JSON.parse(jsonRequest);
+      const requestObj: OutgoingRequest = JSON.parse(jsonRequest);
 
       if (requestObj.path !== path || requestObj.method !== method) {
         //console.log(requestObj, requestObj.path, path);
@@ -78,7 +87,7 @@ const getMockServer = () => {
         callback(requestObj);
       }
 
-      const response = {
+      const response: RequestSuccessResponse | RequestErrorResponse = {
         callback_id: requestObj.callback_id,
         ...responseData,
       };
@@ -98,7 +107,8 @@ const getMockServer = () => {
   ) => {
     addServerHandler(
       method, 
-      path, {
+      path, 
+      {
         error: {
           message: errorStr,
         },
@@ -111,10 +121,11 @@ const getMockServer = () => {
   mockServer.addDataHandler = (method: string, path: string, data: object, callback: Callback) => {
     addServerHandler(
       method, 
-      path, {
+      path, 
+      {
         data,
         code: 200,
-      }, 
+      },
       callback
     );
   };

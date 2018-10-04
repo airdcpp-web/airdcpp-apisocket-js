@@ -1,113 +1,51 @@
 import ApiConstants from './ApiConstants';
 
-import SocketLogger, { LoggerOptions, Logger } from './SocketLogger';
-import SocketSubscriptionHandler, { SocketSubscriptionOptions, SocketSubscriptions } from './SocketSubscriptionHandler';
-import SocketRequestHandler, { 
-  SocketRequestMethods, SocketRequestOptions, 
-  TokenAuthenticationData, CredentialsAuthenticationData 
-} from './SocketRequestHandler';
+import SocketLogger from './SocketLogger';
+import SocketSubscriptionHandler from './SocketSubscriptionHandler';
+import SocketRequestHandler from './SocketRequestHandler';
 
 import invariant from 'invariant';
 import Promise from './Promise';
 
-
-export interface RequiredSocketOptions {
-  url: string;
-  username?: string;
-  password?: string;
-} 
-
-export interface AdvancedSocketOptions {
-  autoReconnect: boolean;
-  reconnectInterval: number;
-  userSession: boolean;
-}
-
-type UserOptions = RequiredSocketOptions & Partial<AdvancedSocketOptions> & 
-  LoggerOptions & SocketSubscriptionOptions & SocketRequestOptions;
-type FullOptions = RequiredSocketOptions & AdvancedSocketOptions & 
-  LoggerOptions & SocketSubscriptionOptions & SocketRequestOptions;
-
-export { UserOptions as APISocketOptions };
-
-type AuthToken = string;
-
-interface AuthenticationResponse {
-  auth_token: AuthToken;
-}
-
-type ErrorHandler = (error: ErrorBase | string) => void;
-
-interface LogoutResponse {
-
-}
-
-type ErrorType = 'missing_field' | 'invalid' | 'already_exists';
-
-export interface ErrorFull {
-  message: string;
-  field: string;
-  code: ErrorType;
-}
-
-export interface ErrorBase {
-  code: number;
-  message: string;
-}
-
-export interface ErrorResponse extends ErrorBase {
-  json: ErrorFull;
-}
+import * as API from './types/api';
+import * as Options from './types/options';
+import * as Socket from './types/socket';
+import * as Requests from './types/requests';
 
 
-type ConnectedCallback = (data: AuthenticationResponse) => void;
-type SessionResetCallback = () => void;
-type DisconnectedCallback = (reason: string, code: number) => void;
+// INTERNAL TYPES
+type FullOptions = Options.RequiredSocketOptions & Options.AdvancedSocketOptions & 
+  Options.LoggerOptions & Options.SocketSubscriptionOptions & Options.SocketRequestOptions;
 
-export interface APISocket extends SocketRequestMethods, SocketSubscriptions {
-  connect: (username?: string, password?: string, reconnectOnFailure?: boolean) => Promise<AuthenticationResponse>; 
-  disconnect: (autoConnect?: boolean) => void;
-  reconnect: (token?: AuthToken, reconnectOnFailure?: boolean) => Promise<AuthenticationResponse>;
-  logout: () => Promise<LogoutResponse>;
-
-  isConnecting: () => boolean;
-  isConnected: () => boolean;
-  isActive: () => boolean;
-  
-  logger: Logger;
-
-  onConnected: ConnectedCallback | null;
-  onSessionReset: SessionResetCallback | null;
-  onDisconnected: DisconnectedCallback | null;
-  readonly nativeSocket: WebSocket | null;
-}
-
-type AuthenticationResolver = (response: AuthenticationResponse) => void;
-type AuthenticationHandler = () => Promise<AuthenticationResponse>;
+type AuthenticationResolver = (response: API.AuthenticationResponse) => void;
+type AuthenticationHandler = () => Promise<API.AuthenticationResponse>;
 type ReconnectHandler = () => void;
+type ConnectErrorHandler = (error: API.ErrorBase | string) => void;
 
-const defaultOptions: AdvancedSocketOptions = {
+
+// CONSTANTS
+const defaultOptions: Options.AdvancedSocketOptions = {
   autoReconnect: true,
   reconnectInterval: 10,
   userSession: false,
 };
 
-const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
+const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSocket) => {
   const options: FullOptions = {
     ...defaultOptions, 
     ...userOptions
   };
 
   let ws: WebSocket | null = null;
-  let authToken: AuthToken | null = null;
+  let authToken: API.AuthTokenType | null = null;
 
-  let socket: APISocket | null = null;
+  let socket: Socket.APISocket | null = null;
   let reconnectTimer: NodeJS.Timer;
   let disconnected = true;
 
-  let connectedCallback: ConnectedCallback | null = null;
-  let sessionResetCallback: SessionResetCallback | null = null;
-  let disconnectedCallback: DisconnectedCallback | null = null;
+  let connectedCallback: Socket.ConnectedCallback | null = null;
+  let sessionResetCallback: Socket.SessionResetCallback | null = null;
+  let disconnectedCallback: Socket.DisconnectedCallback | null = null;
 
   const logger = SocketLogger(options);
 
@@ -117,7 +55,11 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     options
   );
 
-  const requests: ReturnType<typeof SocketRequestHandler> = SocketRequestHandler(() => socket!, logger, options);
+  const requests: ReturnType<typeof SocketRequestHandler> = SocketRequestHandler(
+    () => socket!, 
+    logger,
+    options
+  );
 
   invariant(userOptions.url, '"url" must be defined in settings object');
 
@@ -149,7 +91,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
         }
 
         socket!.reconnect()
-          .catch((error: ErrorBase) => {
+          .catch((error: API.ErrorBase) => {
             logger.error('Reconnect failed for a closed socket', error.message);
           });
       });
@@ -186,7 +128,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
       throw '"password" option was not supplied for authentication';
     }
 
-    const data: CredentialsAuthenticationData = {
+    const data: API.CredentialsAuthenticationData = {
       username, 
       password,
     };
@@ -199,7 +141,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
 
   // Connect handler for associating socket with an existing session token
   const handleAuthorizeToken = () => {
-    const data: TokenAuthenticationData = {
+    const data: API.TokenAuthenticationData = {
       auth_token: authToken!,
     };
     
@@ -210,7 +152,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   };
 
   // Called after a successful authentication request
-  const onSocketAuthenticated = (data: AuthenticationResponse) => {
+  const onSocketAuthenticated = (data: API.AuthenticationResponse) => {
     if (!authToken) {
       // New session
       logger.info('Login succeed');
@@ -236,16 +178,16 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   // Authentication handler should send the actual authentication request
   const authenticate = (
     resolve: AuthenticationResolver, 
-    reject: ErrorHandler, 
+    reject: ConnectErrorHandler, 
     authenticationHandler: AuthenticationHandler, 
     reconnectHandler: ReconnectHandler
   ) => {
     authenticationHandler()
-      .then((data: AuthenticationResponse) => {
+      .then((data: API.AuthenticationResponse) => {
         onSocketAuthenticated(data);
         resolve(data);
       })
-      .catch((error: ErrorBase) => {
+      .catch((error: Requests.ErrorResponse) => {
         if (error.code) {
           if (authToken && error.code === 400 && options.autoReconnect) {
             // The session was lost (most likely the client was restarted)
@@ -275,7 +217,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   // Authentication handler should send the actual authentication request
   const connectInternal = (
     resolve: AuthenticationResolver, 
-    reject: ErrorHandler, 
+    reject: ConnectErrorHandler, 
     authenticationHandler: AuthenticationHandler, 
     reconnectOnFailure = true
   ) => {
@@ -314,7 +256,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
   const startConnect = (
     authenticationHandler: AuthenticationHandler, 
     reconnectOnFailure: boolean
-  ): Promise<AuthenticationResponse> => {
+  ): Promise<API.AuthenticationResponse> => {
     disconnected = false;
     return new Promise(
       (resolve, reject) => {
@@ -385,7 +327,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     },
 
     // Connect and attempt to associate the socket with an existing session
-    reconnect: (token: AuthToken | undefined = undefined, reconnectOnFailure = true) => {
+    reconnect: (token: API.AuthTokenType | undefined = undefined, reconnectOnFailure = true) => {
       if (isActive()) {
         throw 'Reconnect may only be used for a closed socket';
       }
@@ -407,7 +349,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     logout: () => {
       const resolver = Promise.pending();
       socket!.delete(ApiConstants.LOGOUT_URL)
-        .then((data: LogoutResponse) => {
+        .then((data: API.LogoutResponse) => {
           logger.info('Logout succeed');
           resetSession();
 
@@ -416,7 +358,7 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
           // Don't fire the disconnected event before resolver actions are handled
           disconnect();
         })
-        .catch((error: ErrorBase) => {
+        .catch((error: API.ErrorBase) => {
           logger.error('Logout failed', error);
           resolver.reject(error);
         });
@@ -431,17 +373,17 @@ const ApiSocket = (userOptions: UserOptions, WebSocketImpl: WebSocket) => {
     logger,
 
     // Function to call each time the socket has been connected (and authorized)
-    set onConnected(handler: ConnectedCallback) {
+    set onConnected(handler: Socket.ConnectedCallback) {
       connectedCallback = handler;
     },
 
     // Function to call each time the stored session token was reset (manual logout/rejected reconnect)
-    set onSessionReset(handler: SessionResetCallback) {
+    set onSessionReset(handler: Socket.SessionResetCallback) {
       sessionResetCallback = handler;
     },
 
     // Function to call each time the socket has been disconnected
-    set onDisconnected(handler: DisconnectedCallback) {
+    set onDisconnected(handler: Socket.DisconnectedCallback) {
       disconnectedCallback = handler;
     },
 
