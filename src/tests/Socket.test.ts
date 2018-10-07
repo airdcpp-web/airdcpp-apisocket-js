@@ -208,28 +208,30 @@ describe('socket', () => {
     });
 
     test('should re-authenticate on lost session', async () => {
+      const ErrorResponse = 'Invalid session token';
+
+      // Connect and disconnect
       const socket = await getConnectedSocket();
 
       jest.useFakeTimers();
       socket.disconnect();
       expect(socket.isActive()).toEqual(false);
 
-      // Fail the initial reconnect attempt
-      server.addErrorHandler('POST', ApiConstants.CONNECT_URL, 'Invalid session token', 400);
+      // Fail the initial reconnect attempt with 'Invalid session token'
+      server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400);
       jest.runOnlyPendingTimers();
       socket.reconnect();
 
-      // Re-send credentials
+      // Let the socket reconnect and re-send the initial credentials
       jest.runOnlyPendingTimers();
-
       expect(socket.isConnected()).toEqual(true);
-
       expect(mockConsole.error.mock.calls.length).toBe(0);
-
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
-      expect(mockConsole.warn.mock.calls[0].indexOf('\u001b[33m\u001b[1m400\u001b[22m\u001b[39m')).toBe(2);
-
       expect(socket.getPendingRequestCount()).toBe(0);
+
+      // Ensure that we received the "invalid token" error
+      expect(mockConsole.warn.mock.calls.length).toBe(1);
+      const loggedWarningIndex = mockConsole.warn.mock.calls[0].find(str => str.indexOf(ErrorResponse) !== -1);
+      expect(loggedWarningIndex).toBeDefined();
 
       socket.disconnect();
     });

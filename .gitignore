@@ -4,5 +4,6 @@ coverage
 npm-debug.log
 .idea
 /dist
+/dist-es
 /examples/settings.js
 *.tmp
