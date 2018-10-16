@@ -1,4 +1,4 @@
-import APISocket from '../NodeSocket';
+import { Socket } from '../NodeSocket';
 
 //@ts-ignore
 import { WebSocket, Server } from 'mock-socket';
@@ -53,7 +53,7 @@ export type MockSocketOptions = Omit<Options.APISocketOptions, 'username' | 'pas
 };
 
 const getSocket = (options: MockSocketOptions = {}) => {
-  const socket = APISocket(
+  const socket = Socket(
     {
       ...defaultSocketOptions,
       ...options,

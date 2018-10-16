@@ -21,7 +21,7 @@ When communicating with the API locally, it's recommended to write an extension 
 The example displays a status message in main chat every time a new user joins a hub.
 
 ```javascript
-const ApiSocket = require('airdcpp-apisocket');
+const API = require('airdcpp-apisocket');
 const w3cwebsocket = require('websocket').w3cwebsocket;
 
 const settings = {
@@ -30,7 +30,7 @@ const settings = {
 	password: 'examplepass'
 };
 
-const socket = ApiSocket(settings, w3cwebsocket);
+const socket = API.Socket(settings, w3cwebsocket);
 
 const onUserConnected = function(user) {
 	// Show a status message in that particular hub

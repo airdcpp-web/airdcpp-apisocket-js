@@ -3,4 +3,4 @@ import SocketBase from './SocketBase';
 
 export * from './types';
 
-export default SocketBase;
+export { SocketBase as Socket };

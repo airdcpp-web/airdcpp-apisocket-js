@@ -24,7 +24,7 @@
 ## Constructor
 
 ```
-ApiSocket(settings, websocketImplementation)
+Socket(settings, websocketImplementation)
 ```
 
 API connection won't be established until [`connect`](#connect) is called.
@@ -48,7 +48,7 @@ Web browsers: browser's native WebSocket implementation should be used (simply p
 
 ```js
 
-import ApiSocket from 'airdcpp-apisocket';
+import { Socket } from 'airdcpp-apisocket';
 import { w3cwebsocket } from 'websocket';
 
 const settings = {
@@ -58,7 +58,7 @@ const settings = {
   reconnectInterval: 5
 };
 
-const socket = ApiSocket(settings, w3cwebsocket);
+const socket = Socket(settings, w3cwebsocket);
 
 ```
 
