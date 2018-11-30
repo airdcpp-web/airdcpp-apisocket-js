@@ -119,7 +119,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   };
 
   // Connect handler for creation of new session
-  const handleLogin = (username = options.username, password = options.password) => {
+  const handlePasswordLogin = (username = options.username, password = options.password) => {
     if (!username) {
       throw '"username" option was not supplied for authentication';
     }
@@ -131,10 +131,27 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     const data: API.CredentialsAuthenticationData = {
       username, 
       password,
+      grant_type: 'password',
     };
 
     return requests.postAuthenticate(
-      ApiConstants.LOGIN_URL, 
+      ApiConstants.LOGIN_URL,
+      data
+    );
+  };
+
+  const handleRefreshTokenLogin = (refreshToken: string) => {
+    if (!refreshToken) {
+      throw '"refreshToken" option was not supplied for authentication';
+    }
+
+    const data: API.RefreshTokenAuthenticationData = {
+      refresh_token: refreshToken,
+      grant_type: 'refresh_token',
+    };
+
+    return requests.postAuthenticate(
+      ApiConstants.LOGIN_URL,
       data
     );
   };
@@ -194,7 +211,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
             logger.info('Session lost, re-sending credentials');
             resetSession();
 
-            authenticate(resolve, reject, handleLogin, reconnectHandler);
+            authenticate(resolve, reject, authenticationHandler, reconnectHandler);
             return;
           } else if (error.code === 401) {
             // Invalid credentials, reset the token if we were reconnecting to avoid an infinite loop
@@ -323,7 +340,17 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
       resetSession();
 
-      return startConnect(() => handleLogin(username, password), reconnectOnFailure);
+      return startConnect(() => handlePasswordLogin(username, password), reconnectOnFailure);
+    },
+
+    connectRefreshToken: (refreshToken: string, reconnectOnFailure = true) => {
+      if (isActive()) {
+        throw 'Connect may only be used for a closed socket';
+      }
+
+      resetSession();
+
+      return startConnect(() => handleRefreshTokenLogin(refreshToken), reconnectOnFailure);
     },
 
     // Connect and attempt to associate the socket with an existing session

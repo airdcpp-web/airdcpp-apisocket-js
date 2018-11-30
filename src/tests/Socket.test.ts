@@ -60,6 +60,24 @@ describe('socket', () => {
       socket.disconnect();
     });
 
+    test('should handle valid refresh token', async () => {
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, authResponse);
+      const connectedCallback = jest.fn();
+
+      const socket = getSocket();
+      socket.onConnected = connectedCallback;
+      const response = await socket.connectRefreshToken('refresh token');
+
+      expect(connectedCallback).toHaveBeenCalledWith(authResponse);
+      expect(response).toEqual(authResponse);
+      expect(socket.isConnected()).toEqual(true);
+
+      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(socket.getPendingRequestCount()).toBe(0);
+
+      socket.disconnect();
+    });
+
     test('should handle invalid credentials', async () => {
       server.addErrorHandler('POST', ApiConstants.LOGIN_URL, 'Invalid username or password', 401);
 

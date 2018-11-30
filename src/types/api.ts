@@ -14,6 +14,13 @@ export interface LogoutResponse {
 export interface CredentialsAuthenticationData {
   username: string;
   password: string;
+  grant_type: 'password';
+  max_inactivity?: number;
+}
+
+export interface RefreshTokenAuthenticationData {
+  refresh_token: string;
+  grant_type: 'refresh_token';
   max_inactivity?: number;
 }
 

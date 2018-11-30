@@ -32,15 +32,23 @@ const defaultSocketOptions: Options.APISocketOptions = {
 };
 
 const authResponse = {
-  cid: 'AHLUODI2YZ2U7FDWMHFNJU65ERGKUN4MH7GW5LY',
-  permissions: [ 'admin' ],
-  run_wizard: false,
-  hostname: 'ubuntu-htpc',
-  network_type: 'private',
-  path_separator: '/',
-  platform: 'other',
   auth_token: 'b823187f-4aab-4b71-9764-e63e88401a26',
-  user: 'test',
+  refresh_token: '5124faasf-4aab-4b71-9764-e63e88401a26',
+  user: {
+    permissions: [ 'admin' ],
+    username: 'test',
+    active_sessions: 1,
+    last_login: 0,
+  },
+  system: {
+    cid: 'AHLUODI2YZ2U7FDWMHFNJU65ERGKUN4MH7GW5LY',
+    hostname: 'ubuntu-htpc',
+    network_type: 'private',
+    path_separator: '/',
+    platform: 'other',
+    language: 'fi',
+  },
+  wizard_pending: false,
 };
 
 

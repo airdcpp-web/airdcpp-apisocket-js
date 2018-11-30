@@ -209,7 +209,10 @@ const SocketRequestHandler = (
       delete callbacks[id];
     },
 
-    postAuthenticate(path: string, data: API.TokenAuthenticationData | API.CredentialsAuthenticationData) {
+    postAuthenticate(
+      path: string, 
+      data: API.TokenAuthenticationData | API.CredentialsAuthenticationData | API.RefreshTokenAuthenticationData
+    ) {
       return sendRequest('POST', path, data, true);
     },
   };
