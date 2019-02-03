@@ -303,8 +303,32 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     disconnected = true;
   };
 
+  const waitDisconnected = (timeoutMs: number = 2000): Promise<void>  => {
+    const checkInterval = 50;
+    const maxAttempts = timeoutMs > 0 ? timeoutMs / checkInterval : 0;
+
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      const wait = () => {
+        if (isActive()) {
+          if (attempts >= maxAttempts) {
+            logger.error(`Socket disconnect timed out after ${timeoutMs} ms`);
+            reject('Socket disconnect timed out');
+          } else {
+            setTimeout(wait, checkInterval);
+            attempts++;
+          }
+        } else {
+          resolve();
+        }
+      };
+
+      wait();
+    });
+  };
+
   // Disconnects the socket but keeps the session token
-  const disconnect = (autoConnect = false) => {
+  const disconnect = (autoConnect = false): void => {
     if (!ws) {
       if (!disconnected) {
         if (!autoConnect) {
@@ -398,6 +422,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     isConnected,
     isActive,
     logger,
+    waitDisconnected,
 
     // Function to call each time the socket has been connected (and authorized)
     set onConnected(handler: Socket.ConnectedCallback) {

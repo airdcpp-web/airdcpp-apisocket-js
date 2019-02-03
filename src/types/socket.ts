@@ -28,6 +28,7 @@ export interface APISocket extends SocketRequestMethods, SocketSubscriptions {
   connect: (username?: string, password?: string, reconnectOnFailure?: boolean) => Promise<AuthenticationResponse>; 
   connectRefreshToken: (refreshToken: string, reconnectOnFailure?: boolean) => Promise<AuthenticationResponse>; 
   disconnect: (autoConnect?: boolean) => void;
+  waitDisconnected: (timeoutMs?: number) => Promise<void>; 
   reconnect: (token?: AuthTokenType, reconnectOnFailure?: boolean) => Promise<AuthenticationResponse>;
   logout: () => Promise<LogoutResponse>;
 

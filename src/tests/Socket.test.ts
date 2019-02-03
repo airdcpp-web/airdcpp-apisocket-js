@@ -161,6 +161,36 @@ describe('socket', () => {
     });
   });
 
+  describe('disconnect', () => {
+    test('should handle disconnect', async () => {
+      const socket = await getConnectedSocket();
+
+      socket.disconnect();
+
+      await socket.waitDisconnected();
+
+
+      expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls.length).toBe(0);
+    });
+
+    test('should handle wait disconnected timeout', async () => {
+      const socket = await getConnectedSocket();
+
+      let error;
+      try {
+        await socket.waitDisconnected(50);
+      } catch (e) {
+        error = e;
+      }
+
+      expect(error).toEqual('Socket disconnect timed out');
+
+      expect(mockConsole.error.mock.calls.length).toBe(1);
+      expect(mockConsole.warn.mock.calls.length).toBe(0);
+    });
+  });
+
   describe('reconnect', () => {
     test('should handle auto reconnect', async () => {
       const socket = await getConnectedSocket();
