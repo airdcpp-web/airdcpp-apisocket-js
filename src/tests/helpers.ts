@@ -5,6 +5,7 @@ import { WebSocket, Server } from 'mock-socket';
 
 import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal';
 import * as Options from '../types/options';
+import ApiConstants from '../ApiConstants';
 
 
 
@@ -69,6 +70,16 @@ const getSocket = (options: MockSocketOptions = {}) => {
     WebSocket
   );
   
+  return socket;
+};
+
+
+const getConnectedSocket = async (server: any, options?: MockSocketOptions) => {
+  server.addDataHandler('POST', ApiConstants.LOGIN_URL, authResponse);
+
+  const socket = getSocket(options);
+  await socket.connect();
+
   return socket;
 };
 
@@ -141,4 +152,4 @@ const getMockServer = () => {
   return mockServer;
 };
 
-export { authResponse, defaultSocketOptions, getMockServer, getSocket, mockConsole };
+export { authResponse, defaultSocketOptions, getMockServer, getSocket, getConnectedSocket, mockConsole };

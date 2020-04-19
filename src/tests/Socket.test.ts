@@ -1,7 +1,6 @@
 import { authResponse, 
-  defaultSocketOptions, 
-  getMockServer, getSocket, mockConsole, 
-  MockSocketOptions,
+  defaultSocketOptions, getConnectedSocket,
+  getMockServer, getSocket, mockConsole
 } from './helpers';
 
 import ApiConstants from '../ApiConstants';
@@ -13,15 +12,6 @@ import * as MockDate from 'mockdate';
 
 
 let server: any;
-
-const getConnectedSocket = async (options?: MockSocketOptions) => {
-  server.addDataHandler('POST', ApiConstants.LOGIN_URL, authResponse);
-
-  const socket = getSocket(options);
-  await socket.connect();
-
-  return socket;
-};
 
 
 // tslint:disable:no-empty
@@ -131,7 +121,7 @@ describe('socket', () => {
       const sessionResetCallback = jest.fn();
       const disconnectedCallback = jest.fn();
 
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
       socket.onSessionReset = sessionResetCallback;
       socket.onDisconnected = disconnectedCallback;
 
@@ -163,7 +153,7 @@ describe('socket', () => {
 
   describe('disconnect', () => {
     test('should handle disconnect', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       socket.disconnect();
 
@@ -175,7 +165,7 @@ describe('socket', () => {
     });
 
     test('should handle wait disconnected timeout', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       let error;
       try {
@@ -193,7 +183,7 @@ describe('socket', () => {
 
   describe('reconnect', () => {
     test('should handle auto reconnect', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       jest.useFakeTimers();
 
@@ -219,7 +209,7 @@ describe('socket', () => {
     });
 
     test('should cancel autoreconnect', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       jest.useFakeTimers();
 
@@ -240,7 +230,7 @@ describe('socket', () => {
     });
 
     test('should handle manual reconnect', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       socket.disconnect();
       expect(socket.isConnected()).toEqual(false);
@@ -259,7 +249,7 @@ describe('socket', () => {
       const ErrorResponse = 'Invalid session token';
 
       // Connect and disconnect
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       jest.useFakeTimers();
       socket.disconnect();
@@ -287,7 +277,7 @@ describe('socket', () => {
 
   describe('requests', () => {
     test('should report request timeouts', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       jest.useFakeTimers();
       socket.addListener('hubs', 'hub_updated', _ => {})
@@ -324,7 +314,7 @@ describe('socket', () => {
     };
 
     test('should handle listener messages', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
       server.addDataHandler('POST', 'hubs/listeners/hub_updated', null);
       server.addDataHandler('POST', `hubs/${entityId}/listeners/hub_updated`, null);
 
@@ -349,7 +339,7 @@ describe('socket', () => {
     });
 
     test('should handle listener removal', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
 
       const subscribeCallback = jest.fn();
       server.addDataHandler('POST', 'hubs/listeners/hub_updated', null, subscribeCallback);
@@ -384,7 +374,7 @@ describe('socket', () => {
     });
 
     test('should handle view updates', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
       const viewUpdateCallback = jest.fn();
 
       const removeListener = socket.addViewUpdateListener('hub_user_view', viewUpdateCallback, entityId);
@@ -416,7 +406,7 @@ describe('socket', () => {
     };
 
     test('should handle hook actions', async () => {
-      const socket = await getConnectedSocket();
+      const socket = await getConnectedSocket(server);
       let removeListener = null;
 
       // Add hook
@@ -457,7 +447,7 @@ describe('socket', () => {
 
   describe('logging', () => {
     const connect = async (logLevel: string) => {
-      const socket = await getConnectedSocket({
+      const socket = await getConnectedSocket(server, {
         logLevel,
       });
 

@@ -6,3 +6,5 @@ export * from './subscriptions';
 
 export * from './socket';
 export * from './options';
+
+export * from './public_helpers';
