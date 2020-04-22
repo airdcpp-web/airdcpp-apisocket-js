@@ -1,6 +1,6 @@
 {
   "name": "airdcpp-apisocket",
-  "version": "2.2.0",
+  "version": "2.3.0-beta.1",
   "description": "Javascript connector for AirDC++ Web API",
   "license": "MIT",
   "authors": [
@@ -43,9 +43,9 @@
     "@types/invariant": "^2.2.31",
     "@types/jest": "^25.2.1",
     "@types/mockdate": "^2.0.0",
-    "@types/node": "^13.13.0",
-    "jest": "^25.3.0",
-    "jest-cli": "^25.3.0",
+    "@types/node": "^13.13.2",
+    "jest": "^25.4.0",
+    "jest-cli": "^25.4.0",
     "jest-environment-node-debug": "^2.0.0",
     "mock-socket": "~6.0.4",
     "mockdate": "^2.0.5",
