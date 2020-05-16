@@ -11,7 +11,7 @@ import { HookSubscriberInfo } from 'types';
 import { IncomingSubscriptionEvent } from 'types/api_internal';
 
 
-let server: any;
+let server: ReturnType<typeof getMockServer>;
 
 // tslint:disable:no-empty
 describe('public helpers', () => {
@@ -55,14 +55,14 @@ describe('public helpers', () => {
       };
       
       // Socket handlers
-      const socket = await getConnectedSocket(server);
+      const { socket } = await getConnectedSocket(server);
 
       const listenerAddCallback = jest.fn();
-      server.addDataHandler('POST', `menus/listeners/${MENU_ID}_menuitem_selected`, null, listenerAddCallback);
+      server.addDataHandler('POST', `menus/listeners/${MENU_ID}_menuitem_selected`, undefined, listenerAddCallback);
 
       const hookAddCallback = jest.fn();
       const hookResolveCallback = jest.fn();
-      server.addDataHandler('POST', `menus/hooks/${MENU_ID}_list_menuitems`, null, hookAddCallback);
+      server.addDataHandler('POST', `menus/hooks/${MENU_ID}_list_menuitems`, undefined, hookAddCallback);
       server.addDataHandler(
         'POST', 
         `menus/hooks/${MENU_ID}_list_menuitems/${HOOK_COMPLETION_ID}/resolve`, 
@@ -116,7 +116,7 @@ describe('public helpers', () => {
         completion_id: 1,
       };
 
-      server.send(JSON.stringify(hookEventData));
+      server.send(hookEventData);
 
       await waitForExpect(() => {
         expect(hookResolveCallback).toHaveBeenCalledTimes(1);
@@ -142,7 +142,7 @@ describe('public helpers', () => {
         completion_id: HOOK_COMPLETION_ID,
       };
 
-      server.send(JSON.stringify(selectEventData));
+      server.send(selectEventData);
       expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null);
       expect(onClickItem2Mock).not.toBeCalled();
 

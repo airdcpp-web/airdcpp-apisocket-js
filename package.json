@@ -47,7 +47,7 @@
     "jest": "^26.0.1",
     "jest-cli": "^26.0.1",
     "jest-environment-node-debug": "^2.0.0",
-    "mock-socket": "~6.0.4",
+    "mock-socket": "^9.0.3",
     "mockdate": "^2.0.5",
     "pre-commit": "^1.2.2",
     "rimraf": "^3.0.2",
