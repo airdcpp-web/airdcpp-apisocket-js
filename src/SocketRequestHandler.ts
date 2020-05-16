@@ -28,7 +28,7 @@ const SocketRequestHandler = (
   let callbacks: { [key: number]: Callback } = {};
   let currentCallbackId = 0;
   
-  let timeoutReportInterval: NodeJS.Timer;
+  let timeoutReportInterval: any;
 
   // Internal
 

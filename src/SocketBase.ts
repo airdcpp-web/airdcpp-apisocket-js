@@ -40,7 +40,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   let authToken: API.AuthTokenType | null = null;
 
   let socket: Socket.APISocket | null = null;
-  let reconnectTimer: NodeJS.Timer;
+  let reconnectTimer: any;
   let disconnected = true;
 
   let connectedCallback: Socket.ConnectedCallback | null = null;
