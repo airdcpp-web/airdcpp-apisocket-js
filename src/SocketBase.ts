@@ -74,14 +74,18 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   };
 
   const onClosed = (event: CloseEvent) => {
-    logger.info(event.reason ? `Websocket was closed: ${event.reason}` : 'Websocket was closed');
+    if (event.wasClean) {
+      logger.info('Websocket was closed normally');
+    } else {
+      logger.error(`Websocket failed: ${event.reason} (code: ${event.code})`);
+    }
 
     requests.onSocketDisconnected();
     subscriptions.onSocketDisconnected();
     ws = null;
     
     if (disconnectedCallback) {
-      disconnectedCallback(event.reason, event.code);
+      disconnectedCallback(event.reason, event.code, event.wasClean);
     }
 
     if (authToken && options.autoReconnect && !disconnected) {
@@ -219,7 +223,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
           }
 
           // Authentication was rejected
-          socket!.disconnect();
+          socket!.disconnect(undefined, 'Authentication failed');
         } else {
           // Socket was disconnected during the authentication
           logger.info('Socket disconnected during authentication, reconnecting');
@@ -328,7 +332,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   };
 
   // Disconnects the socket but keeps the session token
-  const disconnect = (autoConnect = false): void => {
+  const disconnect = (autoConnect = false, reason = 'Manually disconnected by the client'): void => {
     if (!ws) {
       if (!disconnected) {
         if (!autoConnect) {
@@ -351,7 +355,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
       cancelReconnect();
     }
 
-    ws.close();
+    ws.close(1000, reason);
   };
 
   socket = {
@@ -407,7 +411,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
           resolver.resolve(data);
 
           // Don't fire the disconnected event before resolver actions are handled
-          disconnect();
+          disconnect(undefined, 'Logged out');
         })
         .catch((error: API.ErrorBase) => {
           logger.error('Logout failed', error);
