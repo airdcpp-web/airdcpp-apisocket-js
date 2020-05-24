@@ -6,9 +6,9 @@ import {
 import waitForExpect from 'wait-for-expect';
 
 import { addContextMenuItems } from '../PublicHelpers';
-import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from 'types/public_helpers_internal';
-import { HookSubscriberInfo } from 'types';
-import { IncomingSubscriptionEvent } from 'types/api_internal';
+import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from '../types/public_helpers_internal';
+import { HookSubscriberInfo } from '../types';
+import { IncomingSubscriptionEvent } from '../types/api_internal';
 
 
 let server: ReturnType<typeof getMockServer>;

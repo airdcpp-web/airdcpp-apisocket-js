@@ -1,6 +1,5 @@
-import { HookSubscriberInfo, APISocket } from './types';
-import { ContextMenuItem } from 'types/public_helpers';
-import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from 'types/public_helpers_internal';
+import { HookSubscriberInfo, APISocket, ContextMenuItem } from './types';
+import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from './types/public_helpers_internal';
 
 
 export const addContextMenuItems = async <IdT, EntityIdT = unknown>(

@@ -119,7 +119,7 @@ const SocketRequestHandler = (
   const cancelPendingRequests = (message: string = 'Request cancelled') => {
     Object.keys(callbacks)
       .forEach(id => {
-        logger.verbose(`Disconnecting a pending request ${id} (${message})`);
+        logger.verbose(`Canceling a pending request ${id} (${message})`);
 
         const cb: Callback = callbacks[id];
         cb.resolver.reject(message);
