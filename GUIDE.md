@@ -278,7 +278,12 @@ Name of the hook
 **`callback`** (function, required)
 
 Function to call on received event messages. The callback function signature is `handler(data, accept, reject)` where `data` is the 
-hook-specific data object.
+hook-specific data object. `accept` (`(data) => void`) function should be called in case of success, and it may also be called with a data argument, if supported by the hook. `reject` (signature `(rejectId: string, rejectMessage: string) => void`) should be called with the error information in case of errors.
+
+**`subscriberInfo`** (object, required)
+
+Information about the subscriber (an object with `id` and `name` properties).
+
 
 **Return value**
 
@@ -298,8 +303,13 @@ const handleIncomingMessage = (message, accept, reject) => {
   }
 }
 
+const subscriberInfo = {
+  id: 'my-test-hook',
+  name: 'Test hook'
+};
+
 // NOTE: async function
-const removeHook = await socket.addHook('hubs', 'hub_incoming_message_hook', handleIncomingMessage);
+const removeHook = await socket.addHook('hubs', 'hub_incoming_message_hook', handleIncomingMessage, subscriberInfo);
 
 // ... other code
 
@@ -320,4 +330,79 @@ ignoredListenerEvents: [
 	'share_file_validation_hook'
 ],
 ignoredRequestPaths: /^(share\/hooks\/share_file_validation_hook\/\d+\/resolve)$/
+```
+
+
+## Helpers
+
+### `addContextMenuItems`
+
+A helper function that can be used to add context menu items. See the (Menu API documentation)[https://airdcpp.docs.apiary.io/#reference/menus] for more information about the menu API.
+
+**Arguments**
+
+**`socket`** (object, required)
+
+`airdcpp-apisocket` instance
+
+**`menuItems`** (array[object], required)
+
+List of menu items to be added
+
+Each item should include `id` and `name` properties and optionally an `icon` property (see [`menuitems`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for more information).
+
+Additionally each item should have a `onClick` function (signature `(selectedIds: any[], entityId: any | undefined) => void`) property that will be called if the menu item is being clicked by the user. 
+
+Optionally you may also provide a `filter` function (signature `(selectedIds: any[], entityId: any | undefined) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
+
+**`menuType`** (string, required)
+
+Menu type (see the (Menu API documentation)[https://airdcpp.docs.apiary.io/#reference/menus] for available types)
+
+**`subscriberInfo`** (object, required)
+
+Information about the subscriber (see the [`addHook`](#addHook) method).
+
+**Return value**
+
+Promise returning a function that will remove the menu items when being called.
+
+
+**Example**
+
+```js
+
+import { addContextMenuItems } from 'airdcpp-apisocket';
+
+const socket = // ...initialize the socket
+
+socket.onConnected = (sessionInfo) => {
+  if (sessionInfo.system_info.api_feature_level >= 4) {
+    // ...remember to check the permissions if needed
+
+    const subscriberInfo = {
+      id: 'airdcpp-release-validator',
+      name: 'Release validator extension'
+    };
+
+    addContextMenuItems(
+      socket,
+      [
+        {
+          id: 'scan_missing_extra',
+          title: `Scan share for missing/extra files`,
+          icon: {
+            semantic: 'yellow broom'
+          },
+          onClick: async () => {
+            await runners.scanShare();
+          },
+          filter: selectedIds => selectedIds.indexOf(extension.name) !== -1
+        }
+      ],
+      'extension', // Menu type
+      subscriberInfo,
+    );
+  }
+}
 ```
