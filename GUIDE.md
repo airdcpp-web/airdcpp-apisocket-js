@@ -18,7 +18,8 @@
   - [addListener](#addlistener)
 - [Action hooks](#action-hooks)
   - [addHook](#addhook)
-
+- [Helpers](#helpers)
+  - [addContextMenuItems](#addContextMenuItems)
 
 
 ## Constructor
