@@ -7,11 +7,13 @@ export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
   menuitem_id: string;
   selected_ids: IdT[];
   entity_id: EntityIdT | null;
+  permissions: string[];
 }
 
 export interface MenuItemListHookData<IdT, EntityIdT> {
   selected_ids: IdT[];
   entity_id: EntityIdT | null;
+  permissions: string[];
 }
 
 export interface MenuItemListHookAcceptData<IdT, EntityIdT> {

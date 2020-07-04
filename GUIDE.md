@@ -352,9 +352,12 @@ List of menu items to be added
 
 Each item should include `id` and `name` properties and optionally an `icon` property (see [`menuitems`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for more information).
 
-Additionally each item should have a `onClick` function (signature `(selectedIds: any[], entityId: any | undefined) => void`) property that will be called if the menu item is being clicked by the user. 
+Additionally each item should have a `onClick` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[]) => void`) property that will be called if the menu item is being clicked by the user. 
 
-Optionally you may also provide a `filter` function (signature `(selectedIds: any[], entityId: any | undefined) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
+Optional properties for filtering:
+
+`filter`: function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[]) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
+`access`: Required access (`string`) for accessing the menu item. If you need to perform more complex permission checks, use the `filter` function to check the `permissions` argument. See the [`API documentation`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for available access strings.
 
 **`menuType`** (string, required)
 
@@ -395,6 +398,7 @@ socket.onConnected = (sessionInfo) => {
           icon: {
             semantic: 'yellow broom'
           },
+          access: 'settings_edit',
           onClick: async () => {
             await runners.scanShare();
           },

@@ -28,7 +28,8 @@ describe('public helpers', () => {
     test('should add context menu items', async () => {
       // Data
       const MENU_ID = 'extensions';
-      const MENU_ITEM_ID = 'mock_id_1';
+      const MENU_ITEM1_ID = 'mock_id_1';
+      const MENU_ITEM2_ID = 'mock_id_2';
       const SUBSCRIBER_INFO: HookSubscriberInfo = {
         id: 'mock-id',
         name: 'mock-hook'
@@ -41,16 +42,27 @@ describe('public helpers', () => {
       ];
 
       const MENU_ITEM1 = {
-        id: MENU_ITEM_ID,
+        id: MENU_ITEM1_ID,
         title: 'Mock item 1',
         icon: {
-          semantic: 'mock_semantic_icon',
+          semantic: 'mock_semantic_icon1',
         },
       };
+
+      const MENU_ITEM2 = {
+        id: MENU_ITEM2_ID,
+        title: 'Mock item 2',
+        icon: {
+          semantic: 'mock_semantic_icon2',
+        },
+      };
+
+      const VALID_ACCESS = 'valid_access';
 
       const menuItemListData: MenuItemListHookAcceptData<string, null> = {
         menuitems: [
           MENU_ITEM1,
+          MENU_ITEM2,
         ]
       };
       
@@ -74,6 +86,7 @@ describe('public helpers', () => {
       // Add menu items
       const onClickItem1Mock = jest.fn();
       const onClickItem2Mock = jest.fn();
+      const onClickItemIgnoredMock = jest.fn();
 
 
       const removeMenuItems = await addContextMenuItems<string>(
@@ -84,17 +97,30 @@ describe('public helpers', () => {
             filter: async (ids, entityId) => {
               return true;
             },
+            access: VALID_ACCESS,
             onClick: (ids, entityId) => {
               onClickItem1Mock(ids, entityId);
             }
           }, {
-            id: 'ignored_id',
-            title: 'Mock item ignored',
+            ...MENU_ITEM2,
+            onClick: (ids, entityId) => {
+              onClickItem2Mock(ids, entityId);
+            }
+          }, {
+            id: 'ignored_filter_id',
+            title: 'Mock item ignored by filter',
             filter: (ids, entityId) => {
               return false;
             },
             onClick: (ids, entityId) => {
-              onClickItem2Mock(ids, entityId);
+              onClickItemIgnoredMock(ids, entityId);
+            }
+          }, {
+            id: 'ignored_access_id',
+            title: 'Mock item ignored by access',
+            access: 'invalid_access',
+            onClick: (ids, entityId) => {
+              onClickItemIgnoredMock(ids, entityId);
             }
           }
         ],
@@ -111,7 +137,8 @@ describe('public helpers', () => {
         event: `${MENU_ID}_list_menuitems`,
         data: {
           selected_ids: selectedMenuIds,
-          entity_id: null
+          entity_id: null,
+          permissions: [VALID_ACCESS]
         },
         completion_id: 1,
       };
@@ -133,18 +160,22 @@ describe('public helpers', () => {
       const selectEventData: IncomingSubscriptionEvent<SelectedMenuItemListenerData<string, null>> = {
         event: `${MENU_ID}_menuitem_selected`,
         data: {
-          menuitem_id: MENU_ITEM_ID,
+          menuitem_id: MENU_ITEM1_ID,
           hook_id: SUBSCRIBER_INFO.id,
           menu_id: MENU_ID,
           entity_id: null,
           selected_ids: selectedMenuIds,
+          permissions: [VALID_ACCESS]
         },
         completion_id: HOOK_COMPLETION_ID,
       };
 
       server.send(selectEventData);
-      expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null);
+      await waitForExpect(() => {
+        expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null);
+      });
       expect(onClickItem2Mock).not.toBeCalled();
+      expect(onClickItemIgnoredMock).not.toBeCalled();
 
       // Remove items
       removeMenuItems();

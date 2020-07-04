@@ -2,6 +2,26 @@ import { HookSubscriberInfo, APISocket, ContextMenuItem } from './types';
 import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from './types/public_helpers_internal';
 
 
+const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, permissions: string[]): boolean => {
+  if (!menuItem.access) {
+    return true;
+  }
+
+  return permissions.indexOf('admin') !== -1 || permissions.indexOf(menuItem.access) !== -1;
+};
+
+// Check whether the item passes the access and filter checks
+const validateItem = async <IdT, EntityIdT>(
+  menuItem: ContextMenuItem<IdT, EntityIdT>, 
+  data: MenuItemListHookData<IdT, EntityIdT>
+): Promise<boolean> => {
+  if (!!menuItem.filter && !(await menuItem.filter(data.selected_ids, data.entity_id, data.permissions))) {
+    return false;
+  }
+
+  return checkAccess(menuItem, data.permissions);
+};
+
 export const addContextMenuItems = async <IdT, EntityIdT = unknown>(
   socket: APISocket,
   menuItems: ContextMenuItem<IdT, EntityIdT>[], 
@@ -11,11 +31,14 @@ export const addContextMenuItems = async <IdT, EntityIdT = unknown>(
   const removeListener = await socket.addListener<SelectedMenuItemListenerData<IdT, EntityIdT>>(
     'menus', 
     `${menuId}_menuitem_selected`, 
-    data => {
+    async (data) => {
       if (data.hook_id === subscriberInfo.id) {
         const menuItem = menuItems.find(i => data.menuitem_id === i.id);
-        if (menuItem) {
-          menuItem.onClick(data.selected_ids, data.entity_id);
+        if (!!menuItem) {
+          const isValid = await validateItem(menuItem, data);
+          if (isValid) {
+            menuItem.onClick(data.selected_ids, data.entity_id, data.permissions);
+          }
         }
       }
     }
@@ -30,8 +53,9 @@ export const addContextMenuItems = async <IdT, EntityIdT = unknown>(
     async (data, accept, reject) => {
       const validItems = [];
       for (const item of menuItems) {
-        if (!item.filter || (await item.filter(data.selected_ids, data.entity_id))) {
-          const { onClick, filter, ...apiItem } = item;
+        const isValid = await validateItem(item, data);
+        if (isValid) {
+          const { onClick, filter, access, ...apiItem } = item;
           validItems.push(apiItem);
         }
       }
