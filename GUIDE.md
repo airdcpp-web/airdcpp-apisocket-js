@@ -107,7 +107,18 @@ Promise that will be resolved with response of the [POST /sessions/authorize](ht
 
 ### `disconnect`
 
+`disconnect(reconnect, reason)`
+
 Disconnect the socket while keeping the session token cached. `reconnect` can be used to re-establish the connection.
+
+**Arguments**
+
+**`reconnect`** (boolean, optional)
+
+**`reason`** (string, optional)
+
+String describing the reason for the disconnect
+
 
 ### `reconnect`
 
@@ -158,6 +169,17 @@ Fired after the socket was connected and authenticated. `data` is the data recei
 ### `onSocketDisconnected`
 
 Fired after the socket was disconnected.
+
+**Callback arguments**
+
+Supplied arguments are properties from the websocket [CloseEvent](https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent).
+
+**`reason`** (string)
+
+**`code`** (number)
+
+**`wasClean`** (number)
+
 
 ### `onSessionReset`
 
