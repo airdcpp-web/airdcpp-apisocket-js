@@ -1,6 +1,6 @@
 {
   "name": "airdcpp-apisocket",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Javascript connector for AirDC++ Web API",
   "license": "MIT",
   "authors": [
