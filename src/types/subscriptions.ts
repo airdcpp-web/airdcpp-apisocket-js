@@ -4,7 +4,13 @@ import * as API from './api';
 // SUBSCRIPTIONS
 export type SubscriptionRemoveHandler = (sendApi?: boolean) => void;
 
-export type SubscriptionCallback<DataT extends object | void = object> = (data: DataT) => void;
+export type SubscriptionCallback<
+  DataT extends object | void = object,
+  EntityIdT = API.EntityId | undefined
+> = (
+  data: DataT, 
+  entityId: EntityIdT
+) => void;
 
 
 // HOOKS
@@ -35,16 +41,22 @@ export interface SocketSubscriptions {
     subscriberInfo: HookSubscriberInfo
   ) => Promise<SubscriptionRemoveHandler>;
 
-  addListener: <DataT extends object | void>(
+  addListener: <
+    DataT extends object | void,
+    EntityIdT extends API.EntityId | undefined
+  >(
     apiModuleUrl: string, 
     event: string, 
-    callback: SubscriptionCallback<DataT>, 
+    callback: SubscriptionCallback<DataT, EntityIdT>, 
     entityId?: API.EntityId
   ) => Promise<SubscriptionRemoveHandler>;
 
-  addViewUpdateListener: <DataT extends object | void>(
+  addViewUpdateListener: <
+    DataT extends object | void,
+    EntityIdT extends API.EntityId | undefined
+  >(
     viewName: string, 
-    callback: SubscriptionCallback<DataT>, 
+    callback: SubscriptionCallback<DataT, EntityIdT>, 
     entityId?: API.EntityId
   ) => () => void;
 
