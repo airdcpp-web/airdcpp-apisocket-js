@@ -1,4 +1,4 @@
-import { HookSubscriberInfo, APISocket, ContextMenuItem } from './types';
+import { HookSubscriberInfo, APISocket, ContextMenuItem, EntityId } from './types';
 import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from './types/public_helpers_internal';
 
 
@@ -22,13 +22,13 @@ const validateItem = async <IdT, EntityIdT>(
   return checkAccess(menuItem, data.permissions);
 };
 
-export const addContextMenuItems = async <IdT, EntityIdT = unknown>(
+export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | undefined = undefined>(
   socket: APISocket,
   menuItems: ContextMenuItem<IdT, EntityIdT>[], 
   menuId: string, 
   subscriberInfo: HookSubscriberInfo
 ) => {
-  const removeListener = await socket.addListener<SelectedMenuItemListenerData<IdT, EntityIdT>>(
+  const removeListener = await socket.addListener<SelectedMenuItemListenerData<IdT, EntityIdT>, EntityIdT>(
     'menus', 
     `${menuId}_menuitem_selected`, 
     async (data) => {

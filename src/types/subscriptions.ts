@@ -43,7 +43,7 @@ export interface SocketSubscriptions {
 
   addListener: <
     DataT extends object | void,
-    EntityIdT extends API.EntityId | undefined
+    EntityIdT extends API.EntityId | undefined = undefined
   >(
     apiModuleUrl: string, 
     event: string, 
@@ -53,7 +53,7 @@ export interface SocketSubscriptions {
 
   addViewUpdateListener: <
     DataT extends object | void,
-    EntityIdT extends API.EntityId | undefined
+    EntityIdT extends API.EntityId | undefined = undefined
   >(
     viewName: string, 
     callback: SubscriptionCallback<DataT, EntityIdT>, 
