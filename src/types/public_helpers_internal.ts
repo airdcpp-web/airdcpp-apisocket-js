@@ -8,14 +8,20 @@ export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
   selected_ids: IdT[];
   entity_id: EntityIdT | null;
   permissions: string[];
+  supports: string[];
 }
 
 export interface MenuItemListHookData<IdT, EntityIdT> {
   selected_ids: IdT[];
   entity_id: EntityIdT | null;
   permissions: string[];
+  supports: string[];
 }
 
+export type ResponseMenuItem<IdT, EntityIdT> = Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter' | 'urls'> & {
+  urls?: string[] | undefined;
+};
+
 export interface MenuItemListHookAcceptData<IdT, EntityIdT> {
-  menuitems: Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter'>[];
+  menuitems: ResponseMenuItem<IdT, EntityIdT>[];
 }

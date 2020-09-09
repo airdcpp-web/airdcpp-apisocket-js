@@ -374,11 +374,13 @@ List of menu items to be added
 
 Each item should include `id` and `name` properties and optionally an `icon` property (see [`menuitems`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for more information).
 
-Additionally each item should have a `onClick` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[]) => void`) property that will be called if the menu item is being clicked by the user. 
+Additionally each item should have either of the following properties: 
+- `onClick` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => void`) property that will be called if the menu item is being clicked by the user 
+- `urls` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => string[] | undefined`) property that will return an array of URLs to be opened by the UI if the menu item is being clicked by the user (or `undefined` if no URLs should be added and the `onClick` hander should be called instead)
 
 Optional properties for filtering:
 
-`filter`: function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[]) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
+`filter`: function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
 `access`: Required access (`string`) for accessing the menu item. If you need to perform more complex permission checks, use the `filter` function to check the `permissions` argument. See the [`API documentation`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for available access strings.
 
 **`menuType`** (string, required)
@@ -421,10 +423,23 @@ socket.onConnected = (sessionInfo) => {
             semantic: 'yellow broom'
           },
           access: 'settings_edit',
-          onClick: async () => {
+          onClick: async (selectedIds, entityId, permissions, supports) => {
             await runners.scanShare();
           },
           filter: selectedIds => selectedIds.indexOf(extension.name) !== -1
+        }, {
+          id: 'google',
+          title: `Google extension by ID`,
+          icon: {
+            semantic: 'external'
+          },
+          urls: async (selectedIds, entityId, permissions, supports) => {
+            // Generate Google search URL for each selected extension
+            return selectedIds
+              .map(extensionId => {
+                return `https://www.google.com/q=${encodeURIComponent(extensionId)}`
+              );
+          }
         }
       ],
       'extension', // Menu type

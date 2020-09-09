@@ -10,12 +10,19 @@ const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, 
   return permissions.indexOf('admin') !== -1 || permissions.indexOf(menuItem.access) !== -1;
 };
 
+const URL_SUPPORT = 'url';
+
 // Check whether the item passes the access and filter checks
 const validateItem = async <IdT, EntityIdT>(
   menuItem: ContextMenuItem<IdT, EntityIdT>, 
   data: MenuItemListHookData<IdT, EntityIdT>
 ): Promise<boolean> => {
-  if (!!menuItem.filter && !(await menuItem.filter(data.selected_ids, data.entity_id, data.permissions))) {
+  const { selected_ids, entity_id, permissions, supports } = data;
+  if (!!menuItem.urls && (!supports || supports.indexOf(URL_SUPPORT) === -1)) {
+    return false;
+  }
+
+  if (!!menuItem.filter && !(await menuItem.filter(selected_ids, entity_id, permissions, supports))) {
     return false;
   }
 
@@ -36,8 +43,9 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
         const menuItem = menuItems.find(i => data.menuitem_id === i.id);
         if (!!menuItem) {
           const isValid = await validateItem(menuItem, data);
-          if (isValid) {
-            menuItem.onClick(data.selected_ids, data.entity_id, data.permissions);
+          if (isValid && !!menuItem.onClick) {
+            const { selected_ids, entity_id, permissions, supports } = data;
+            menuItem.onClick(selected_ids, entity_id, permissions, supports);
           }
         }
       }
@@ -55,8 +63,13 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
       for (const item of menuItems) {
         const isValid = await validateItem(item, data);
         if (isValid) {
+          const { selected_ids, entity_id, permissions, supports } = data;
+          const urls = !item.urls ? undefined : await item.urls(selected_ids, entity_id, permissions, supports);
           const { onClick, filter, access, ...apiItem } = item;
-          validItems.push(apiItem);
+          validItems.push({
+            ...apiItem,
+            urls,
+          });
         }
       }
 

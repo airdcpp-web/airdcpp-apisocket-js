@@ -30,11 +30,14 @@ describe('public helpers', () => {
       const MENU_ID = 'extensions';
       const MENU_ITEM1_ID = 'mock_id_1';
       const MENU_ITEM2_ID = 'mock_id_2';
+      const MENU_ITEM3_ID = 'mock_id_3';
       const SUBSCRIBER_INFO: HookSubscriberInfo = {
         id: 'mock-id',
         name: 'mock-hook'
       };
       const HOOK_COMPLETION_ID = 1;
+
+      const URLS = [ 'mock_url1', 'mock_url2' ];
 
       const selectedMenuIds = [
         MENU_ID,
@@ -57,12 +60,25 @@ describe('public helpers', () => {
         },
       };
 
+      const MENU_ITEM3 = {
+        id: MENU_ITEM3_ID,
+        title: 'Mock item 3',
+        icon: {
+          semantic: 'mock_semantic_icon3',
+        },
+        urls: URLS,
+      };
+
       const VALID_ACCESS = 'valid_access';
+
+      const PERMISSIONS = [ VALID_ACCESS ];
+      const SUPPORTS = [ 'url' ];
 
       const menuItemListData: MenuItemListHookAcceptData<string, null> = {
         menuitems: [
           MENU_ITEM1,
           MENU_ITEM2,
+          MENU_ITEM3
         ]
       };
       
@@ -86,6 +102,7 @@ describe('public helpers', () => {
       // Add menu items
       const onClickItem1Mock = jest.fn();
       const onClickItem2Mock = jest.fn();
+      const onGetUrlsItem3Mock = jest.fn();
       const onClickItemIgnoredMock = jest.fn();
 
 
@@ -98,8 +115,8 @@ describe('public helpers', () => {
               return true;
             },
             access: VALID_ACCESS,
-            onClick: (ids, entityId) => {
-              onClickItem1Mock(ids, entityId);
+            onClick: (ids, entityId, permissions, supports) => {
+              onClickItem1Mock(ids, entityId, permissions, supports);
             }
           }, {
             ...MENU_ITEM2,
@@ -107,20 +124,26 @@ describe('public helpers', () => {
               onClickItem2Mock(ids, entityId);
             }
           }, {
+            ...MENU_ITEM3,
+            urls: (ids, entityId, permissions, supports) => {
+              onGetUrlsItem3Mock(ids, entityId, permissions, supports);
+              return URLS;
+            }
+          }, {
             id: 'ignored_filter_id',
             title: 'Mock item ignored by filter',
-            filter: (ids, entityId) => {
+            filter: (ids, entityId, permissions, supports) => {
               return false;
             },
-            onClick: (ids, entityId) => {
-              onClickItemIgnoredMock(ids, entityId);
+            onClick: (ids, entityId, permissions, supports) => {
+              onClickItemIgnoredMock(ids, entityId, permissions, supports);
             }
           }, {
             id: 'ignored_access_id',
             title: 'Mock item ignored by access',
             access: 'invalid_access',
-            onClick: (ids, entityId) => {
-              onClickItemIgnoredMock(ids, entityId);
+            onClick: (ids, entityId, permissions, supports) => {
+              onClickItemIgnoredMock(ids, entityId, permissions, supports);
             }
           }
         ],
@@ -138,7 +161,8 @@ describe('public helpers', () => {
         data: {
           selected_ids: selectedMenuIds,
           entity_id: null,
-          permissions: [VALID_ACCESS]
+          permissions: PERMISSIONS,
+          supports: SUPPORTS,
         },
         completion_id: 1,
       };
@@ -155,6 +179,10 @@ describe('public helpers', () => {
         }),
       );
 
+      await waitForExpect(() => {
+        expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
+      });
+      expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
 
       // Select event listener
       const selectEventData: IncomingSubscriptionEvent<SelectedMenuItemListenerData<string, null>> = {
@@ -165,15 +193,17 @@ describe('public helpers', () => {
           menu_id: MENU_ID,
           entity_id: null,
           selected_ids: selectedMenuIds,
-          permissions: [VALID_ACCESS]
+          permissions: PERMISSIONS,
+          supports: SUPPORTS,
         },
         completion_id: HOOK_COMPLETION_ID,
       };
 
       server.send(selectEventData);
       await waitForExpect(() => {
-        expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null);
+        expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
       });
+      expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
       expect(onClickItem2Mock).not.toBeCalled();
       expect(onClickItemIgnoredMock).not.toBeCalled();
 
