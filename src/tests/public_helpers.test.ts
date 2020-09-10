@@ -24,64 +24,66 @@ describe('public helpers', () => {
     server.stop();
   });
 
+
+  // Data
+  const MENU_ID = 'extensions';
+  const MENU_ITEM1_ID = 'mock_id_1';
+  const MENU_ITEM2_ID = 'mock_id_2';
+  const MENU_ITEM3_ID = 'mock_id_3';
+  const SUBSCRIBER_INFO: HookSubscriberInfo = {
+    id: 'mock-id',
+    name: 'mock-hook'
+  };
+  const HOOK_COMPLETION_ID = 1;
+
+  const URLS = [ 'mock_url1', 'mock_url2' ];
+
+  const selectedMenuIds = [
+    MENU_ID,
+    'random_id'
+  ];
+
+  const MENU_ITEM1 = {
+    id: MENU_ITEM1_ID,
+    title: 'Mock item 1',
+    icon: {
+      semantic: 'mock_semantic_icon1',
+    },
+  };
+
+  const MENU_ITEM2 = {
+    id: MENU_ITEM2_ID,
+    title: 'Mock item 2',
+    icon: {
+      semantic: 'mock_semantic_icon2',
+    },
+  };
+
+  const MENU_ITEM3 = {
+    id: MENU_ITEM3_ID,
+    title: 'Mock item 3',
+    icon: {
+      semantic: 'mock_semantic_icon3',
+    },
+    urls: URLS,
+  };
+
+  const VALID_ACCESS = 'valid_access';
+
+  const PERMISSIONS = [ VALID_ACCESS ];
+  const SUPPORTS = [ 'url' ];
+
+  const menuItemListData: MenuItemListHookAcceptData<string, null> = {
+    menuitems: [
+      MENU_ITEM1,
+      MENU_ITEM2,
+      MENU_ITEM3
+    ]
+  };
+      
+
   describe('context menu items', () => {
     test('should add context menu items', async () => {
-      // Data
-      const MENU_ID = 'extensions';
-      const MENU_ITEM1_ID = 'mock_id_1';
-      const MENU_ITEM2_ID = 'mock_id_2';
-      const MENU_ITEM3_ID = 'mock_id_3';
-      const SUBSCRIBER_INFO: HookSubscriberInfo = {
-        id: 'mock-id',
-        name: 'mock-hook'
-      };
-      const HOOK_COMPLETION_ID = 1;
-
-      const URLS = [ 'mock_url1', 'mock_url2' ];
-
-      const selectedMenuIds = [
-        MENU_ID,
-        'random_id'
-      ];
-
-      const MENU_ITEM1 = {
-        id: MENU_ITEM1_ID,
-        title: 'Mock item 1',
-        icon: {
-          semantic: 'mock_semantic_icon1',
-        },
-      };
-
-      const MENU_ITEM2 = {
-        id: MENU_ITEM2_ID,
-        title: 'Mock item 2',
-        icon: {
-          semantic: 'mock_semantic_icon2',
-        },
-      };
-
-      const MENU_ITEM3 = {
-        id: MENU_ITEM3_ID,
-        title: 'Mock item 3',
-        icon: {
-          semantic: 'mock_semantic_icon3',
-        },
-        urls: URLS,
-      };
-
-      const VALID_ACCESS = 'valid_access';
-
-      const PERMISSIONS = [ VALID_ACCESS ];
-      const SUPPORTS = [ 'url' ];
-
-      const menuItemListData: MenuItemListHookAcceptData<string, null> = {
-        menuitems: [
-          MENU_ITEM1,
-          MENU_ITEM2,
-          MENU_ITEM3
-        ]
-      };
-      
       // Socket handlers
       const { socket } = await getConnectedSocket(server);
 
