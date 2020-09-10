@@ -10,7 +10,7 @@ const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, 
   return permissions.indexOf('admin') !== -1 || permissions.indexOf(menuItem.access) !== -1;
 };
 
-const URL_SUPPORT = 'url';
+const URLS_SUPPORT = 'urls';
 
 // Check whether the item passes the access and filter checks
 const validateItem = async <IdT, EntityIdT>(
@@ -18,7 +18,7 @@ const validateItem = async <IdT, EntityIdT>(
   data: MenuItemListHookData<IdT, EntityIdT>
 ): Promise<boolean> => {
   const { selected_ids, entity_id, permissions, supports } = data;
-  if (!!menuItem.urls && (!supports || supports.indexOf(URL_SUPPORT) === -1)) {
+  if (!!menuItem.urls && (!supports || supports.indexOf(URLS_SUPPORT) === -1)) {
     return false;
   }
 

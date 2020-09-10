@@ -71,7 +71,7 @@ describe('public helpers', () => {
   const VALID_ACCESS = 'valid_access';
 
   const PERMISSIONS = [ VALID_ACCESS ];
-  const SUPPORTS = [ 'url' ];
+  const SUPPORTS = [ 'urls' ];
 
   const menuItemListData: MenuItemListHookAcceptData<string, null> = {
     menuitems: [
