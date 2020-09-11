@@ -66,10 +66,12 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
           const { selected_ids, entity_id, permissions, supports } = data;
           const urls = !item.urls ? undefined : await item.urls(selected_ids, entity_id, permissions, supports);
           const { onClick, filter, access, ...apiItem } = item;
-          validItems.push({
-            ...apiItem,
-            urls,
-          });
+          if (!!onClick || (!!urls && urls.length)) {
+            validItems.push({
+              ...apiItem,
+              urls,
+            });
+          }
         }
       }
 
