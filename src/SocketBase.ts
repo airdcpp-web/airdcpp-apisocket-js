@@ -41,7 +41,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
   let socket: Socket.APISocket | null = null;
   let reconnectTimer: any;
-  let disconnected = true;
+  let forceNoAutoConnect = true;
 
   let connectedCallback: Socket.ConnectedCallback | null = null;
   let sessionResetCallback: Socket.SessionResetCallback | null = null;
@@ -88,9 +88,9 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
       disconnectedCallback(event.reason, event.code, event.wasClean);
     }
 
-    if (authToken && options.autoReconnect && !disconnected) {
+    if (authToken && options.autoReconnect && !forceNoAutoConnect) {
       setTimeout(() => {
-        if (disconnected) {
+        if (forceNoAutoConnect) {
           return;
         }
 
@@ -278,7 +278,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     authenticationHandler: AuthenticationHandler, 
     reconnectOnFailure: boolean
   ): Promise<API.AuthenticationResponse> => {
-    disconnected = false;
+    forceNoAutoConnect = false;
     return new Promise(
       (resolve, reject) => {
         logger.info('Starting socket connect');
@@ -302,9 +302,9 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     return !!ws;
   };
 
-  const cancelReconnect = () => {
+  const disableReconnect = () => {
     clearTimeout(reconnectTimer);
-    disconnected = true;
+    forceNoAutoConnect = true;
   };
 
   const waitDisconnected = (timeoutMs: number = 2000): Promise<void>  => {
@@ -334,10 +334,10 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   // Disconnects the socket but keeps the session token
   const disconnect = (autoConnect = false, reason = 'Manually disconnected by the client'): void => {
     if (!ws) {
-      if (!disconnected) {
+      if (!forceNoAutoConnect) {
         if (!autoConnect) {
           logger.verbose('Disconnecting a closed socket with auto reconnect enabled (cancel reconnect)');
-          cancelReconnect();
+          disableReconnect();
         } else {
           logger.verbose('Attempting to disconnect a closed socket with auto reconnect enabled (continue connecting)');
         }
@@ -352,7 +352,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     logger.info('Disconnecting socket');
 
     if (!autoConnect) {
-      cancelReconnect();
+      disableReconnect();
     }
 
     ws.close(1000, reason);

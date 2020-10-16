@@ -86,7 +86,7 @@ const SocketRequestHandler = (
     const resolver = Promise.pending();
 
     callbacks[callbackId] = {
-      time: new Date().getTime(),
+      time: Date.now(),
       resolver,
       ignored,
     };
@@ -107,7 +107,7 @@ const SocketRequestHandler = (
   // This is more about spotting backend issues, such as frozen threads and dropped responses
   // The socket itself should handle actual connection issues
   const reportTimeouts = () => {
-    const now = new Date().getTime();
+    const now = Date.now();
     Object.keys(callbacks).forEach(callbackId => {
       const request = callbacks[callbackId];
       if (request.time + (requestTimeout * 1000) < now) {
