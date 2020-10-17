@@ -9,6 +9,7 @@ export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
   entity_id: EntityIdT | null;
   permissions: string[];
   supports: string[];
+  form_values: object;
 }
 
 export interface MenuItemListHookData<IdT, EntityIdT> {
@@ -18,9 +19,12 @@ export interface MenuItemListHookData<IdT, EntityIdT> {
   supports: string[];
 }
 
-export type ResponseMenuItem<IdT, EntityIdT> = Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter' | 'urls'> & {
+export interface ResponseMenuItemCallbackFields {
   urls?: string[] | undefined;
-};
+  form_definitions?: object[] | undefined;
+}
+
+export type ResponseMenuItem<IdT, EntityIdT> = Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter' | 'urls' | 'form_definitions'> & ResponseMenuItemCallbackFields;
 
 export interface MenuItemListHookAcceptData<IdT, EntityIdT> {
   menuitems: ResponseMenuItem<IdT, EntityIdT>[];

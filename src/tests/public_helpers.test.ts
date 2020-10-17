@@ -37,6 +37,11 @@ describe('public helpers', () => {
   const HOOK_COMPLETION_ID = 1;
 
   const URLS = [ 'mock_url1', 'mock_url2' ];
+  const FORM_DEFINITIONS = [
+    {
+      dummyDefinition1: 'dummy',
+    }
+  ];
 
   const selectedMenuIds = [
     MENU_ID,
@@ -49,6 +54,7 @@ describe('public helpers', () => {
     icon: {
       semantic: 'mock_semantic_icon1',
     },
+    form_definitions: FORM_DEFINITIONS,
   };
 
   const MENU_ITEM2 = {
@@ -71,7 +77,10 @@ describe('public helpers', () => {
   const VALID_ACCESS = 'valid_access';
 
   const PERMISSIONS = [ VALID_ACCESS ];
-  const SUPPORTS = [ 'urls' ];
+  const SUPPORTS = [ 'urls', 'form' ];
+  const FORM_VALUES = {
+    formValue1: true,
+  };
 
   const menuItemListData: MenuItemListHookAcceptData<string, null> = {
     menuitems: [
@@ -117,9 +126,12 @@ describe('public helpers', () => {
               return true;
             },
             access: VALID_ACCESS,
-            onClick: (ids, entityId, permissions, supports) => {
-              onClickItem1Mock(ids, entityId, permissions, supports);
-            }
+            onClick: (ids, entityId, permissions, supports, formValues) => {
+              onClickItem1Mock(ids, entityId, permissions, supports, formValues);
+            },
+            formDefinitions: (ids, entityId, permissions, supports) => {
+              return FORM_DEFINITIONS;
+            },
           }, {
             ...MENU_ITEM2,
             onClick: (ids, entityId) => {
@@ -137,15 +149,15 @@ describe('public helpers', () => {
             filter: (ids, entityId, permissions, supports) => {
               return false;
             },
-            onClick: (ids, entityId, permissions, supports) => {
-              onClickItemIgnoredMock(ids, entityId, permissions, supports);
+            onClick: (ids, entityId, permissions, supports, formValues) => {
+              onClickItemIgnoredMock(ids, entityId, permissions, supports, formValues);
             }
           }, {
             id: 'ignored_access_id',
             title: 'Mock item ignored by access',
             access: 'invalid_access',
-            onClick: (ids, entityId, permissions, supports) => {
-              onClickItemIgnoredMock(ids, entityId, permissions, supports);
+            onClick: (ids, entityId, permissions, supports, formValues) => {
+              onClickItemIgnoredMock(ids, entityId, permissions, supports, formValues);
             }
           }
         ],
@@ -158,56 +170,68 @@ describe('public helpers', () => {
 
 
       // List items hook
-      const hookEventData: IncomingSubscriptionEvent<MenuItemListHookData<string, null>> = {
-        event: `${MENU_ID}_list_menuitems`,
-        data: {
-          selected_ids: selectedMenuIds,
-          entity_id: null,
-          permissions: PERMISSIONS,
-          supports: SUPPORTS,
-        },
-        completion_id: 1,
-      };
+      {
+        const hookEventData: IncomingSubscriptionEvent<MenuItemListHookData<string, null>> = {
+          event: `${MENU_ID}_list_menuitems`,
+          data: {
+            selected_ids: selectedMenuIds,
+            entity_id: null,
+            permissions: PERMISSIONS,
+            supports: SUPPORTS,
+          },
+          completion_id: 1,
+        };
 
-      server.send(hookEventData);
+        server.send(hookEventData);
+      }
 
-      await waitForExpect(() => {
-        expect(hookResolveCallback).toHaveBeenCalledTimes(1);
-      });
+      // Validate list items results
+      {
+        await waitForExpect(() => {
+          expect(hookResolveCallback).toHaveBeenCalledTimes(1);
+        });
 
-      expect(hookResolveCallback).toBeCalledWith(
-        expect.objectContaining({
-          data: menuItemListData
-        }),
-      );
+        expect(hookResolveCallback).toBeCalledWith(
+          expect.objectContaining({
+            data: menuItemListData
+          }),
+        );
 
-      await waitForExpect(() => {
-        expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
-      });
-      expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
+        await waitForExpect(() => {
+          expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
+        });
+        expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
+      }
 
       // Select event listener
-      const selectEventData: IncomingSubscriptionEvent<SelectedMenuItemListenerData<string, null>> = {
-        event: `${MENU_ID}_menuitem_selected`,
-        data: {
-          menuitem_id: MENU_ITEM1_ID,
-          hook_id: SUBSCRIBER_INFO.id,
-          menu_id: MENU_ID,
-          entity_id: null,
-          selected_ids: selectedMenuIds,
-          permissions: PERMISSIONS,
-          supports: SUPPORTS,
-        },
-        completion_id: HOOK_COMPLETION_ID,
-      };
+      {
+        const selectEventData: IncomingSubscriptionEvent<SelectedMenuItemListenerData<string, null>> = {
+          event: `${MENU_ID}_menuitem_selected`,
+          data: {
+            menuitem_id: MENU_ITEM1_ID,
+            hook_id: SUBSCRIBER_INFO.id,
+            menu_id: MENU_ID,
+            entity_id: null,
+            selected_ids: selectedMenuIds,
+            permissions: PERMISSIONS,
+            supports: SUPPORTS,
+            form_values: FORM_VALUES
+          },
+          completion_id: HOOK_COMPLETION_ID,
+        };
 
-      server.send(selectEventData);
-      await waitForExpect(() => {
-        expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
-      });
-      expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
-      expect(onClickItem2Mock).not.toBeCalled();
-      expect(onClickItemIgnoredMock).not.toBeCalled();
+        server.send(selectEventData);
+      }
+
+      // Validate select event results
+      {
+        await waitForExpect(() => {
+          expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
+        });
+        expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS, FORM_VALUES);
+        expect(onClickItem2Mock).not.toBeCalled();
+        expect(onClickItemIgnoredMock).not.toBeCalled();
+      }
 
       // Remove items
       removeMenuItems();

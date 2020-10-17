@@ -1,5 +1,8 @@
 import { HookSubscriberInfo, APISocket, ContextMenuItem, EntityId } from './types';
-import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from './types/public_helpers_internal';
+import { 
+  SelectedMenuItemListenerData, MenuItemListHookData, 
+  MenuItemListHookAcceptData, ResponseMenuItemCallbackFields 
+} from './types/public_helpers_internal';
 
 
 const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, permissions: string[]): boolean => {
@@ -11,6 +14,11 @@ const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, 
 };
 
 const URLS_SUPPORT = 'urls';
+const FORM_SUPPORT = 'form';
+
+const hasSupport = (support: string, supports: string[]) => {
+  return !!supports && supports.indexOf(support) !== -1;
+};
 
 // Check whether the item passes the access and filter checks
 const validateItem = async <IdT, EntityIdT>(
@@ -18,7 +26,7 @@ const validateItem = async <IdT, EntityIdT>(
   data: MenuItemListHookData<IdT, EntityIdT>
 ): Promise<boolean> => {
   const { selected_ids, entity_id, permissions, supports } = data;
-  if (!!menuItem.urls && (!supports || supports.indexOf(URLS_SUPPORT) === -1)) {
+  if (!!menuItem.urls && !hasSupport(URLS_SUPPORT, supports)) {
     return false;
   }
 
@@ -27,6 +35,38 @@ const validateItem = async <IdT, EntityIdT>(
   }
 
   return checkAccess(menuItem, data.permissions);
+};
+
+const parseCallbackData = async <IdT, EntityIdT extends EntityId | undefined = undefined>(
+  item: ContextMenuItem<IdT, EntityIdT>,
+  data: MenuItemListHookData<IdT, EntityIdT>
+): Promise<ResponseMenuItemCallbackFields> => {
+  const { selected_ids, entity_id, permissions, supports } = data;
+  if (!!item.urls && !!item.urls.length) {
+    let urls: string[] | undefined;
+    if (typeof item.urls === 'function') {
+      urls = await item.urls(selected_ids, entity_id, permissions, supports);
+    } else {
+      urls = item.urls;
+    }
+
+    return {
+      urls,
+    };
+  } else if (!!item.formDefinitions && hasSupport(FORM_SUPPORT, supports)) {
+    let formDefinitions: object[] | undefined;
+    if (typeof item.formDefinitions === 'function') {
+      formDefinitions = await item.formDefinitions(selected_ids, entity_id, permissions, supports);
+    } else {
+      formDefinitions = item.formDefinitions;
+    }
+
+    return {
+      form_definitions: formDefinitions,
+    };
+  }
+
+  return {};
 };
 
 export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | undefined = undefined>(
@@ -44,8 +84,8 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
         if (!!menuItem) {
           const isValid = await validateItem(menuItem, data);
           if (isValid && !!menuItem.onClick) {
-            const { selected_ids, entity_id, permissions, supports } = data;
-            menuItem.onClick(selected_ids, entity_id, permissions, supports);
+            const { selected_ids, entity_id, permissions, supports, form_values } = data;
+            menuItem.onClick(selected_ids, entity_id, permissions, supports, form_values);
           }
         }
       }
@@ -63,13 +103,15 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
       for (const item of menuItems) {
         const isValid = await validateItem(item, data);
         if (isValid) {
-          const { selected_ids, entity_id, permissions, supports } = data;
-          const urls = !item.urls ? undefined : await item.urls(selected_ids, entity_id, permissions, supports);
-          const { onClick, filter, access, ...apiItem } = item;
-          if (!!onClick || (!!urls && urls.length)) {
+          const parsedCallbackData = await parseCallbackData(item, data);
+
+          const { onClick, id, title, icon } = item;
+          if (!!onClick || (!!parsedCallbackData.urls && parsedCallbackData.urls.length)) {
             validItems.push({
-              ...apiItem,
-              urls,
+              id, 
+              title, 
+              icon,
+              ...parsedCallbackData,
             });
           }
         }

@@ -375,13 +375,18 @@ List of menu items to be added
 Each item should include `id` and `name` properties and optionally an `icon` property (see [`menuitems`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for more information).
 
 Additionally each item should have either of the following properties: 
-- `onClick` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => void`) property that will be called if the menu item is being clicked by the user 
-- `urls` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => string[] | undefined`) property that will return an array of URLs to be opened by the UI if the menu item is being clicked by the user (or `undefined` if no URLs should be added and the `onClick` hander should be called instead)
+- `onClick` function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[], formValues: object) => void`) property that will be called if the menu item is being clicked by the user.
+`formValues` contains user input from the input form if `formDefinitions` was specified for the menu item.
+- `urls` function/string array (signature `string[] | ((selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => string[]) | undefined`) property that will return an array of URLs to be opened by the UI if the menu item is being clicked by the user (or `undefined` if no URLs should be added and the `onClick` hander should be called instead)
 
 Optional properties for filtering:
 
 `filter`: function (signature `(selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => boolean | Promise<boolean>`) if you want to show the menu item conditionally. The filter function must return `true` if the specific menu item should be added.
 `access`: Required access (`string`) for accessing the menu item. If you need to perform more complex permission checks, use the `filter` function to check the `permissions` argument. See the [`API documentation`](https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items) for available access strings.
+
+Optional form definitions:
+
+- `formDefinitions` function/object array (signature `object[] | ((selectedIds: any[], entityId: any | undefined, permissions: string[], supports: string[]) => object[]) | undefined`) property that can used to define a form that will be shown to the user after the item has been clicked (the form user input will then be available in the `onClick` handler). See the [API documentation](https://airdcpp.docs.apiary.io/#reference/menus/menus/list-menu-items) for information about the form definition format.
 
 **`menuType`** (string, required)
 
@@ -423,10 +428,20 @@ socket.onConnected = (sessionInfo) => {
             semantic: 'yellow broom'
           },
           access: 'settings_edit',
-          onClick: async (selectedIds, entityId, permissions, supports) => {
-            await runners.scanShare();
+          onClick: async (selectedIds, entityId, permissions, supports, formValues) => {
+            const ignoreExcluded = formValues.ignore_excluded; // User input from the displayed form
+            await runners.scanShare(ignoreExcluded);
           },
-          filter: selectedIds => selectedIds.indexOf(extension.name) !== -1
+          filter: selectedIds => selectedIds.indexOf(extension.name) !== -1,
+          formDefinitions: (selectedIds, entityId, permissions, supports) => {
+            // Show a dialog before the scan to allow the user to customize scanning options
+            return {
+              key: 'ignore_excluded',
+              title: 'Ignore files/directories that are excluded from share',
+              default_value: true,
+              type: 'boolean'
+            };
+          },
         }, {
           id: 'google',
           title: `Google extension by ID`,
