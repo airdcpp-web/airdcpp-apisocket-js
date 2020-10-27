@@ -215,7 +215,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
             logger.info('Session lost, re-sending credentials');
             resetSession();
 
-            authenticate(resolve, reject, authenticationHandler, reconnectHandler);
+            authenticate(resolve, reject, handlePasswordLogin, reconnectHandler);
             return;
           } else if (error.code === 401) {
             // Invalid credentials, reset the token if we were reconnecting to avoid an infinite loop

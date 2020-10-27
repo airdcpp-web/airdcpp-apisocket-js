@@ -266,16 +266,27 @@ describe('socket', () => {
       expect(socket.isActive()).toEqual(false);
 
       // Fail the initial reconnect attempt with 'Invalid session token'
+      // and connect with credentials afterwards
       server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400);
+      
+      const authCallback = jest.fn();
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE, authCallback);
+
       jest.runOnlyPendingTimers();
       socket.reconnect();
 
-      // Let the socket reconnect and re-send the initial credentials
-      jest.runOnlyPendingTimers();
-      jest.runOnlyPendingTimers();
+      await waitForExpect(
+        () => {
+          jest.runOnlyPendingTimers();
+          expect(authCallback.mock.calls.length).toBe(1);
+        }
+      );
+
       expect(socket.isConnected()).toEqual(true);
       expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls.length).toBe(1);
       expect(socket.getPendingRequestCount()).toBe(0);
+      
 
       // Ensure that we received the "invalid token" error
       expect(mockConsole.warn.mock.calls.length).toBe(1);

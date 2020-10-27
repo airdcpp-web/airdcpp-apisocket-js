@@ -7,13 +7,18 @@ import ApiConstants from '../ApiConstants';
 import { EventEmitter } from 'events';
 
 
+const VERBOSE = false;
 
 const getMockConsole = () => ({
   log: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    //console.log(a1, a2, a3, a4);
+    if (VERBOSE) {
+      console.log(a1, a2, a3, a4);
+    }
   }),
   info: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    //console.info(a1, a2, a3, a4);
+    if (VERBOSE) {
+      console.info(a1, a2, a3, a4);
+    }
   }),
   warn: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
     console.warn(a1, a2, a3, a4);
@@ -32,7 +37,7 @@ const CONNECT_PARAMS = {
 const getDefaultSocketOptions = (mockConsole: Options.LogOutput): Options.APISocketOptions => ({
   ...CONNECT_PARAMS,
   logOutput: mockConsole,
-  logLevel: 'warn',
+  logLevel: VERBOSE ? 'verbose' : 'warn',
 });
 
 const AUTH_RESPONSE = {
@@ -75,16 +80,20 @@ const getSocket = (options: MockSocketOptions = {}) => {
 };
 
 
-const getConnectedSocket = async (server: ReturnType<typeof getMockServer>, options?: MockSocketOptions) => {
-  server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE);
+type Callback = (requestData: object) => void;
+
+const getConnectedSocket = async (
+  server: ReturnType<typeof getMockServer>, 
+  options?: MockSocketOptions, 
+  authCallback?: Callback
+) => {
+  server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE, authCallback);
 
   const { socket, mockConsole } = getSocket(options);
   await socket.connect();
 
   return { socket, mockConsole };
 };
-
-type Callback = (requestData: object) => void;
 
 const toEmitId = (path: string, method: string) => {
   return `${path}_${method}`;
@@ -125,6 +134,10 @@ const getMockServer = () => {
       const request: OutgoingRequest = JSON.parse(messageObj);
       emitter.emit(toEmitId(request.path, request.method), request, s);
     });
+  });
+
+  mockServer.on('close', () => {
+    emitter.removeAllListeners();
   });
 
   return {
