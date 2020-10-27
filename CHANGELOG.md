@@ -1,3 +1,7 @@
+### 2.4.1 (2020-10-27)
+
+- Fix re-authenticating with credentials if reconnect fails
+
 ### 2.4.0 (2020-10-20)
 
 - Allow context menu items to define forms and URLs to open (supported in API feature level 5, https://airdcpp.docs.apiary.io/#reference/menus/hooks/list-menu-items)
