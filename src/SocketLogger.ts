@@ -20,12 +20,17 @@ const Severities = {
   [LOG_VERBOSE]: 3,
 };
 
-const allowFormatArgs = !isBrowser || (process && process.env && process.env.NODE_ENV === 'test');
+
+// Should we format the line with timestamp and coloring or let the logger implementation to handle it?
+// Do this when running in terminal (node.js/tests in browser env)
+const shouldFormatLine = !isBrowser || 
+  (!!global.process && !!global.process.env && global.process.env.NODE_ENV === 'test');
 
 const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Options.LoggerOptions) => {
   const logLevel = Severities[logSetting];
 
   invariant(
+    // @ts-ignore: This condition will always return true since the function is always defined
     logOutput.log && logOutput.info && logOutput.warn && logOutput.error,
     'Invalid logOutput provided'
   );
@@ -38,7 +43,7 @@ const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Opt
   const print = (args: IArguments, printHandler: Options.PrintHandler, argFormat: (arg: string) => string) => {
     let printableArgs = [ ...Array.prototype.slice.call(args) ];
 
-    if (allowFormatArgs && argFormat) {
+    if (shouldFormatLine && argFormat) {
       // Add the current time as well
       printableArgs = [
         chalk.magenta(formatCurrentTime()),
