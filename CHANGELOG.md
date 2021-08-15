@@ -1,3 +1,7 @@
+### 2.4.2 (2021-08-15)
+
+- Fix "Uncaught ReferenceError: process is not defined" in browser ([#17](https://github.com/airdcpp-web/airdcpp-apisocket-js/issues/17))
+
 ### 2.4.1 (2020-10-27)
 
 - Fix re-authenticating with credentials if reconnect fails
