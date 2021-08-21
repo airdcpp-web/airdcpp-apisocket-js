@@ -193,17 +193,29 @@ const SocketRequestHandler = (
 
         callbacks[id].resolver.resolve(data);
       } else {
-        const { error, code }: APIInternal.RequestErrorResponse = messageObj as APIInternal.RequestErrorResponse;
-        invariant(!!error, 'Invalid error response received from the API');
-        if (!!error) {
-          logger.warn(id, code, error.message, formatFieldError(error as API.FieldError));
-          
-          callbacks[id].resolver.reject({ 
-            message: error.message, 
-            code, 
-            json: error 
-          } as ErrorResponse);
+        const errorMessageObj = messageObj as APIInternal.RequestErrorResponse;
+
+        if (!errorMessageObj.error) {
+          // API should always return an error message but this isn't always the case
+          // (e.g. https://github.com/airdcpp/airdcpp-windows/commit/596b31a9c8c4e72f6c9279972a40ea30f10798c4)
+          logger.warn(
+            'Error message missing from the response (this is an API bug that should be reported)', 
+            id, 
+            messageObj
+          );
         }
+
+        const { code } = errorMessageObj;
+        const error = errorMessageObj.error || { 
+          message: '(no error description)'
+        };
+
+        logger.warn(id, code, error.message, formatFieldError(error as API.FieldError));
+        callbacks[id].resolver.reject({ 
+          message: error.message, 
+          code, 
+          json: error 
+        } as ErrorResponse);
       }
 
       delete callbacks[id];

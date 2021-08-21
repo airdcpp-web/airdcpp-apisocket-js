@@ -354,6 +354,25 @@ describe('socket', () => {
       jest.advanceTimersByTime(1000);
       await waitForExpectTask;
     });
+
+    test('should handle missing error messages', async () => {
+      const { socket } = await getConnectedSocket(server);
+
+      server.addErrorHandler('POST', 'test/test', null, 401);
+
+      let error;
+      try {
+        await socket.post('test/test', { test: 'test' });
+      } catch (e) {
+        error = e;
+      }
+      
+      expect(error.code).toEqual(401);
+      expect(error.message).toEqual('(no error description)');
+
+      socket.disconnect();
+      await waitForExpect(() => expect(socket.isActive()).toEqual(false));
+    });
   });
 
   describe('subscriptions', () => {

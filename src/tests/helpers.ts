@@ -159,7 +159,7 @@ const getMockServer = () => {
     addErrorHandler: (
       method: string, 
       path: string, 
-      errorStr: string, 
+      errorStr: string | null, 
       errorCode: number, 
       subscriptionCallback?: Callback
     ) => {
@@ -167,7 +167,7 @@ const getMockServer = () => {
         method, 
         path, 
         {
-          error: {
+          error: !errorStr ? null as any : {
             message: errorStr,
           },
           code: errorCode,
