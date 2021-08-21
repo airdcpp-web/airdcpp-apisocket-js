@@ -1,3 +1,7 @@
+### 2.4.3 (2021-08-21)
+
+- Handle cases when an error code is returned by the API without an accompanying error message (this may have previously crashed the process e.g. when attempting to remove hooks: https://github.com/airdcpp/airdcpp-windows/commit/596b31a9c8c4e72f6c9279972a40ea30f10798c4).
+
 ### 2.4.2 (2021-08-15)
 
 - Fix "Uncaught ReferenceError: process is not defined" in browser ([#17](https://github.com/airdcpp-web/airdcpp-apisocket-js/issues/17))
