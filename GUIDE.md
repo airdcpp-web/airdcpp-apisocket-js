@@ -272,6 +272,9 @@ const onMessageReceived = (message, hubId) => {
 // NOTE: async function
 const removeListener = await socket.addListener('hubs', 'hub_chat_message', onMessageReceived);
 
+// If you want to add the listener only for a single hub, add the session ID argument at the end:
+// const removeListener = await socket.addListener('hubs', 'hub_chat_message', onMessageReceived, replace_with_the_wanted_session_id);
+
 // ... other code
 
 
