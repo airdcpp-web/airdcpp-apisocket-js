@@ -236,13 +236,13 @@ socket.post('events', {
 
 **Arguments**
 
-**`path`** (string, required)
+**`apiSection`** (string, required)
 
-API path without the `listeners/listener_name` part at the end.
+API section of the listener (the first part of the documented listener URL, e.g. `hubs` or `search`).
 
 **`listenerName`** (string, required)
 
-Name of the API event (listener name)
+Name of the API listener (last part of the documented listener URL)
 
 **`callback`** (function, required)
 
@@ -293,13 +293,13 @@ Action hooks are meant to be used only if you are going to change the behavior h
 
 **Arguments**
 
-**`path`** (string, required)
+**`apiSection`** (string, required)
 
-API path without the `hook/name` part.
+API section of the wanted hook (the first part of the documented hook URL, e.g. `hubs` or `search`).
 
 **`hookName`** (string, required)
 
-Name of the hook
+Name of the hook (last part of the documented hook URL)
 
 **`callback`** (function, required)
 
