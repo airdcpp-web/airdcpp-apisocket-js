@@ -238,11 +238,11 @@ socket.post('events', {
 
 **`path`** (string, required)
 
-API path without the `listener/name` part.
+API path without the `listeners/listener_name` part at the end.
 
 **`listenerName`** (string, required)
 
-Name of the API event
+Name of the API event (listener name)
 
 **`callback`** (function, required)
 
