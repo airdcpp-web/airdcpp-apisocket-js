@@ -35,7 +35,7 @@ export type HookCallback<
 // GENERIC
 export interface SocketSubscriptions {
   addHook: <DataT extends object, CompletionDataT extends object | undefined>(
-    apiModuleUrl: string, 
+    apiModule: string, 
     event: string, 
     callback: HookCallback<DataT, CompletionDataT>, 
     subscriberInfo: HookSubscriberInfo
@@ -45,7 +45,7 @@ export interface SocketSubscriptions {
     DataT extends object | void,
     EntityIdT extends API.EntityId | undefined = undefined
   >(
-    apiModuleUrl: string, 
+    apiModule: string, 
     event: string, 
     callback: SubscriptionCallback<DataT, EntityIdT>, 
     entityId?: API.EntityId

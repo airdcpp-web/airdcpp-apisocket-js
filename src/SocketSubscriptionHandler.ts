@@ -77,7 +77,7 @@ const SocketSubscriptionHandler = (
   };
 
   const handleHookAction = <DataT extends object, CompletionDataT extends object>(
-    apiModuleUrl: string, 
+    subscriptionUrl: string, 
     callback: Subscriptions.HookCallback<DataT, CompletionDataT>, 
     data: DataT, 
     completionId: APIInternal.CompletionIdType
@@ -85,14 +85,14 @@ const SocketSubscriptionHandler = (
     callback(
       data, 
       completionData => {
-        socket().post(`${apiModuleUrl}/${completionId}/resolve`, completionData)
-          .catch((error) => logger.error('Failed to complete hook action', apiModuleUrl, error));
+        socket().post(`${subscriptionUrl}/${completionId}/resolve`, completionData)
+          .catch((error) => logger.error('Failed to complete hook action', subscriptionUrl, error));
       }, 
       (rejectId, rejectMessage) => {
-        socket().post(`${apiModuleUrl}/${completionId}/reject`, {
+        socket().post(`${subscriptionUrl}/${completionId}/reject`, {
           reject_id: rejectId,
           message: rejectMessage,
-        }).catch(error => logger.error('Failed to complete failed hook action', apiModuleUrl, error));
+        }).catch(error => logger.error('Failed to complete failed hook action', subscriptionUrl, error));
       }
     );
   };
@@ -160,13 +160,18 @@ const SocketSubscriptionHandler = (
     },
   
     // Listen to a specific event and manage the API subscription automatically
-    addListener: (apiModuleUrl, event, callback, entityId) => {
+    addListener: (apiModule, event, callback, entityId) => {
       if (!socket().isConnected()) {
         throw 'Listeners can be added only for a connected socket';
       }
+    
+      invariant(
+        apiModule.indexOf('/') === -1, 
+        'The first argument should only contain the API section without any path tokens (entity ID should be supplied separately)'
+      );
   
       const subscriptionId = getEmitId(event, entityId);
-      const subscriptionUrl = getSubscriptionUrl(apiModuleUrl, entityId, event);
+      const subscriptionUrl = getSubscriptionUrl(apiModule, entityId, event);
   
       emitter.on(subscriptionId, callback);
       return addPendingEntry(subscriptionUrl, subscriptionId, callback);
@@ -177,7 +182,7 @@ const SocketSubscriptionHandler = (
     },
   
     addHook: <DataT extends object, CompletionDataT extends object | undefined>(
-      apiModuleUrl: string, 
+      apiModule: string, 
       event: string, 
       callback: Subscriptions.HookCallback<DataT, CompletionDataT>, 
       subscriberInfo: Subscriptions.HookSubscriberInfo
@@ -185,13 +190,18 @@ const SocketSubscriptionHandler = (
       if (!socket().isConnected()) {
         throw 'Hooks can be added only for a connected socket';
       }
+    
+      invariant(
+        apiModule.indexOf('/') === -1, 
+        'The first argument should only contain the API section without any path tokens'
+      );
   
       const subscriptionId = event;
       if (subscriptions[subscriptionId] || pendingSubscriptions[subscriptionId]) {
         throw 'Hook exists';
       }
   
-      const subscriptionUrl = `${apiModuleUrl}/hooks/${event}`;
+      const subscriptionUrl = `${apiModule}/hooks/${event}`;
   
       callback = handleHookAction.bind(SocketSubscriptionHandler, subscriptionUrl, callback);
       emitter.on(subscriptionId, callback);
