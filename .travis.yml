@@ -2,10 +2,9 @@ sudo: required
 language: node_js
 node_js:
 - stable
-- 8
+- node
 - 10
 - 12
-- 14
 before_install:
 # Update to the latest version as peer dependencies may cause issues otherwise
 - npm install npm -g
