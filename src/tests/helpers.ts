@@ -1,5 +1,5 @@
 import { Socket } from '../NodeSocket';
-import { WebSocket, Server } from 'mock-socket';
+import { Client, Server, WebSocket } from 'mock-socket';
 
 import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal';
 import * as Options from '../types/options';
@@ -101,7 +101,7 @@ const toEmitId = (path: string, method: string) => {
 
 const getMockServer = () => {
   const mockServer = new Server(CONNECT_PARAMS.url);
-  let socket: WebSocket;
+  let socket: Client;
   const emitter = new EventEmitter();
 
   const addServerHandler = <DataT extends object | undefined>(
