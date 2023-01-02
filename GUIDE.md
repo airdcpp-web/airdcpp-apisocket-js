@@ -71,7 +71,7 @@ const socket = Socket(settings, w3cwebsocket);
 | :--- | :--- | :---: | :--- |
 | **url** | `string` |  | Fully qualified API URL (**required**). Example: ws://localhost:5600/api/v1/ |
 | **username, password** | `string` |  | Username and password to use when connecting to the API. Alternatively you may provide the credentials when calling [`connect`](#connect). |
-| **autoReconnect** | `boolean` | true | Reconnect automatically if the socket gets disconnected |
+| **autoReconnect** | `boolean` | true | Reconnect automatically if there are network errors when initializing connection or when a connected socket gets disconnected |
 | **reconnectInterval** | `number` | 10 | Interval of automatic reconnection (seconds) |
 | **requestTimeout** | `number` | 30 | Notify about about API requests that have taken longer than this to complete (seconds). This is mainly used for detecting possible issues (deadlocks) with the backend as messages sent via WebSocket should always be delivered (pending request will be aborted automatically when the socket is disconnected). |
 | **reconnectInterval** | `number` | 10 | Interval of automatic reconnection (seconds) |
