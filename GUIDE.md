@@ -9,8 +9,8 @@
   - [isConnected](#isconnected)
   - [logout](#logout)
 - [Connect state events](#connect-state-events)
-  - [onSocketConnected](#onsocketconnected)
-  - [onSocketDisconnected](#onsocketdisconnected)
+  - [onConnected](#onconnected)
+  - [onDisconnected](#ondisconnected)
   - [onSessionReset](#onsessionreset)
 - [Logger](#logger)
 - [API requests](#api-requests)
@@ -160,13 +160,13 @@ Promise that will be resolved with the possible response of the [DELETE /session
 
 ## Connect state events
 
-### `onSocketConnected`
+### `onConnected`
 
-`onSocketConnected(data)`
+`onConnected(data)`
 
 Fired after the socket was connected and authenticated. `data` is the data received from the API authentication request ([`connect`](#connect)/[`reconnect`](#reconnect)).
 
-### `onSocketDisconnected`
+### `onDisconnected`
 
 Fired after the socket was disconnected.
 
