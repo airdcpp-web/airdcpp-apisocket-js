@@ -5,7 +5,7 @@ export type CompletionIdType = number;
 
 // REQUESTS
 
-import { ErrorBase, FieldError, EntityId } from './api';
+import { ErrorBase, FieldError, EntityId } from './api.js';
 
 export interface RequestResponseBase {
   code: number;

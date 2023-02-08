@@ -1,23 +1,7 @@
-// REQUESTS
-
-
-
-
-// SUBSCRIPTIONS
-
-
-
-
-// LOGGER
-
-
-
-// GENERIC
-
-import { AuthTokenType, LogoutResponse, AuthenticationResponse } from './api';
-import { Logger } from './logger';
-import { SocketRequestMethods } from './requests';
-import { SocketSubscriptions } from './subscriptions';
+import { AuthTokenType, LogoutResponse, AuthenticationResponse } from './api.js';
+import { Logger } from './logger.js';
+import { SocketRequestMethods } from './requests.js';
+import { SocketSubscriptions } from './subscriptions.js';
 
 
 export type ConnectedCallback = (data: AuthenticationResponse) => void;

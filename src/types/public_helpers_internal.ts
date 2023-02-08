@@ -1,4 +1,4 @@
-import { ContextMenuItem } from './public_helpers';
+import { ContextMenuItem } from './public_helpers.js';
 
 
 export interface SelectedMenuItemListenerData<IdT, EntityIdT> {

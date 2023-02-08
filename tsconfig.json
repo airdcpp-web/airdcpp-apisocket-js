@@ -2,10 +2,10 @@
   "compilerOptions": {
     "outDir": "build/dist",
     "module": "esnext",
-    "target": "es5",
+    "target": "ES2015",
     "lib": ["es6", "dom", "esnext.asynciterable", "es2018"],
     "sourceMap": true,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "rootDir": "src",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -20,11 +20,6 @@
     "esModuleInterop": true
   },
   "exclude": [
-    "coverage",
-    "devtools",
-    "dist",
-    "node_modules",
-    "scripts",
-    "jest",
+    "jest.config.ts",
   ]
 }

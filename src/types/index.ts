@@ -1,10 +1,10 @@
-export * from './api';
+export * from './api.js';
 
-export * from './logger';
-export * from './requests';
-export * from './subscriptions';
+export * from './logger.js';
+export * from './requests.js';
+export * from './subscriptions.js';
 
-export * from './socket';
-export * from './options';
+export * from './socket.js';
+export * from './options.js';
 
-export * from './public_helpers';
+export * from './public_helpers.js';

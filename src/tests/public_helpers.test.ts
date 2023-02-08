@@ -1,14 +1,15 @@
 import { 
   getMockServer,
   getConnectedSocket,
-} from './helpers';
+} from './helpers.js';
 
 import waitForExpect from 'wait-for-expect';
+import { jest } from '@jest/globals';
 
-import { addContextMenuItems } from '../PublicHelpers';
-import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from '../types/public_helpers_internal';
-import { HookSubscriberInfo } from '../types';
-import { IncomingSubscriptionEvent } from '../types/api_internal';
+import { addContextMenuItems } from '../PublicHelpers.js';
+import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from '../types/public_helpers_internal.js';
+import { HookSubscriberInfo } from '../types/index.js';
+import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 
 let server: ReturnType<typeof getMockServer>;
@@ -187,7 +188,7 @@ describe('public helpers', () => {
 
       // Validate list items results
       {
-        await waitForExpect(() => {
+        await waitForExpect.default(() => {
           expect(hookResolveCallback).toHaveBeenCalledTimes(1);
         });
 
@@ -197,7 +198,7 @@ describe('public helpers', () => {
           }),
         );
 
-        await waitForExpect(() => {
+        await waitForExpect.default(() => {
           expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
         });
         expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
@@ -225,7 +226,7 @@ describe('public helpers', () => {
 
       // Validate select event results
       {
-        await waitForExpect(() => {
+        await waitForExpect.default(() => {
           expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
         });
         expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS, FORM_VALUES);

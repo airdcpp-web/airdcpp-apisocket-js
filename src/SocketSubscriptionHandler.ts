@@ -1,16 +1,16 @@
 import invariant from 'invariant';
 import { EventEmitter } from 'events';
 
-import { eventIgnored } from './utils';
-import Promise, { PendingResult } from './Promise';
+import { eventIgnored } from './utils.js';
+import Promise, { PendingResult } from './Promise.js';
 
-import { Logger } from './types/logger';
-import * as API from './types/api';
-import * as APIInternal from './types/api_internal';
-import * as Options from './types/options';
-import * as Requests from './types/requests';
-import * as Socket from './types/socket';
-import * as Subscriptions from './types/subscriptions';
+import { Logger } from './types/logger.js';
+import * as API from './types/api.js';
+import * as APIInternal from './types/api_internal.js';
+import * as Options from './types/options.js';
+import * as Requests from './types/requests.js';
+import * as Socket from './types/socket.js';
+import * as Subscriptions from './types/subscriptions.js';
 
 
 interface PendingSubscription { 

@@ -1,4 +1,4 @@
-import * as API from './api';
+import * as API from './api.js';
 
 
 export interface SocketRequestMethods {

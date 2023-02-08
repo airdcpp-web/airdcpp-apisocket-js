@@ -1,9 +1,10 @@
 import chalk from 'chalk';
-import isBrowser from 'is-in-browser';
+// @ts-ignore
+import { isBrowser } from 'is-in-browser';
 import invariant from 'invariant';
 
-import * as Options from './types/options';
-import { Logger } from './types/logger';
+import * as Options from './types/options.js';
+import { Logger } from './types/logger.js';
 
 
 export const LOG_NONE = 'none';

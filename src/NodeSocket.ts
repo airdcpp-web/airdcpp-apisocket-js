@@ -1,7 +1,7 @@
-import SocketBase from './SocketBase';
+import SocketBase from './SocketBase.js';
 
 
-export * from './types';
-export * from './PublicHelpers';
+export * from './types/index.js';
+export * from './PublicHelpers.js';
 
 export { SocketBase as Socket };

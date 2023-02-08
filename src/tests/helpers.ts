@@ -1,9 +1,10 @@
-import { Socket } from '../NodeSocket';
+import { Socket } from '../NodeSocket.js';
 import { Client, Server, WebSocket } from 'mock-socket';
+import { jest } from '@jest/globals';
 
-import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal';
-import * as Options from '../types/options';
-import ApiConstants from '../ApiConstants';
+import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal.js';
+import * as Options from '../types/options.js';
+import ApiConstants from '../ApiConstants.js';
 import { EventEmitter } from 'events';
 
 

@@ -1,15 +1,15 @@
 import chalk from 'chalk';
 import invariant from 'invariant';
-import Promise, { PendingResult } from './Promise';
+import Promise, { PendingResult } from './Promise.js';
 
-import { eventIgnored } from './utils';
+import { eventIgnored } from './utils.js';
 
-import * as API from './types/api';
-import * as APIInternal from './types/api_internal';
-import * as Options from './types/options';
-import * as Socket from './types/socket';
-import { Logger } from './types/logger';
-import { SocketRequestMethods, ErrorResponse } from './types/requests';
+import * as API from './types/api.js';
+import * as APIInternal from './types/api_internal.js';
+import * as Options from './types/options.js';
+import * as Socket from './types/socket.js';
+import { Logger } from './types/logger.js';
+import { SocketRequestMethods, ErrorResponse } from './types/requests.js';
 
 
 interface Callback {

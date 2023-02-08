@@ -1,8 +1,8 @@
-import { HookSubscriberInfo, APISocket, ContextMenuItem, EntityId } from './types';
+import { HookSubscriberInfo, APISocket, ContextMenuItem, EntityId } from './types/index.js';
 import { 
   SelectedMenuItemListenerData, MenuItemListHookData, 
   MenuItemListHookAcceptData, ResponseMenuItemCallbackFields 
-} from './types/public_helpers_internal';
+} from './types/public_helpers_internal.js';
 
 
 const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, permissions: string[]): boolean => {

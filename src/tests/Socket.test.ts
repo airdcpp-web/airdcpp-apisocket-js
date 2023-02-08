@@ -1,22 +1,26 @@
 import { 
   AUTH_RESPONSE, CONNECT_PARAMS, 
   getConnectedSocket, getMockServer, getSocket
-} from './helpers';
+} from './helpers.js';
 
-import ApiConstants from '../ApiConstants';
+import ApiConstants from '../ApiConstants.js';
 
-import { HookCallback, HookSubscriberInfo } from '../types/subscriptions';
-import { IncomingSubscriptionEvent } from '../types/api_internal';
+import { HookCallback, HookSubscriberInfo } from '../types/subscriptions.js';
+import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 import * as MockDate from 'mockdate';
 import waitForExpectOriginal from 'wait-for-expect';
-
+import { jest } from '@jest/globals';
 
 let server: ReturnType<typeof getMockServer>;
 
 const EXCEPT_TIMEOUT = 1000;
-const waitForExpect = (func: () => void | Promise<void>) => waitForExpectOriginal(func, EXCEPT_TIMEOUT);
+const waitForExpect = (func: () => void | Promise<void>) => waitForExpectOriginal.default(func, EXCEPT_TIMEOUT);
 
+
+const dummyfn = () => {
+  // ..
+};
 
 // tslint:disable:no-empty
 describe('socket', () => {
@@ -129,10 +133,10 @@ describe('socket', () => {
 
       // Dummy listener
       server.addDataHandler('POST', 'hubs/listeners/hub_updated', undefined);
-      await socket.addListener('hubs', 'hub_updated', _ => {});
+      await socket.addListener('hubs', 'hub_updated', dummyfn);
 
       // Dummy pending request
-      socket.delete('dummyLogoutDelete').catch(error => {
+      socket.delete('dummyLogoutDelete').catch((error: Error) => {
         // TODO: fix, too unreliable at the moment (depends on the timings)
         //expect(error.message).toEqual('Socket disconnected');
       });
@@ -294,7 +298,7 @@ describe('socket', () => {
       socket.reconnect();
 
       {
-        const waitForExpectTask = waitForExpectOriginal(
+        const waitForExpectTask = waitForExpectOriginal.default(
           () => {
             jest.runOnlyPendingTimers();
             expect(authCallback.mock.calls.length).toBe(1);
@@ -332,9 +336,9 @@ describe('socket', () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
       jest.useFakeTimers();
-      socket.addListener('hubs', 'hub_updated', _ => {})
+      socket.addListener('hubs', 'hub_updated', dummyfn)
         .catch(() => {});
-      socket.addListener('hubs', 'hub_added', _ => {})
+      socket.addListener('hubs', 'hub_added', dummyfn)
         .catch(() => {});
 
       jest.advanceTimersByTime(35000);
@@ -422,8 +426,8 @@ describe('socket', () => {
       server.addDataHandler('POST', 'hubs/listeners/hub_updated', undefined, subscribeCallback);
 
       // Add two simultaneous pending add events
-      const p1 = socket.addListener('hubs', 'hub_updated', _ => {});
-      const p2 = socket.addListener('hubs', 'hub_updated', _ => {});
+      const p1 = socket.addListener('hubs', 'hub_updated', dummyfn);
+      const p2 = socket.addListener('hubs', 'hub_updated', dummyfn);
 
       expect(socket.hasListeners()).toBe(false);
       expect(socket.getPendingSubscriptionCount()).toBe(1);
@@ -500,7 +504,7 @@ describe('socket', () => {
           hookSubscriberInfo
         );
 
-        expect(hookAddCallback.mock.calls[0][0].data).toEqual(hookSubscriberInfo);
+        expect((hookAddCallback.mock.calls[0][0] as any).data).toEqual(hookSubscriberInfo);
         expect(hookAddCallback.mock.calls.length).toBe(1);
       }
 
@@ -532,7 +536,7 @@ describe('socket', () => {
       });
 
       socket.disconnect(true);
-      await socket.delete('dummyLogDeleteWarning').catch(error => {
+      await socket.delete('dummyLogDeleteWarning').catch((error: Error) => {
         //...
       });
 

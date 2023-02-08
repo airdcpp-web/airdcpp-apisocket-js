@@ -1,4 +1,4 @@
-import * as Options from './types/options';
+import * as Options from './types/options.js';
 
 
 export const eventIgnored = (path: string, ignoredEvents?: Options.IgnoreMatcher) => {

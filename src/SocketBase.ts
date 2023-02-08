@@ -1,16 +1,16 @@
-import ApiConstants from './ApiConstants';
+import ApiConstants from './ApiConstants.js';
 
-import SocketLogger from './SocketLogger';
-import SocketSubscriptionHandler from './SocketSubscriptionHandler';
-import SocketRequestHandler from './SocketRequestHandler';
+import SocketLogger from './SocketLogger.js';
+import SocketSubscriptionHandler from './SocketSubscriptionHandler.js';
+import SocketRequestHandler from './SocketRequestHandler.js';
 
 import invariant from 'invariant';
-import Promise from './Promise';
+import Promise from './Promise.js';
 
-import * as API from './types/api';
-import * as Options from './types/options';
-import * as Socket from './types/socket';
-import * as Requests from './types/requests';
+import * as API from './types/api.js';
+import * as Options from './types/options.js';
+import * as Socket from './types/socket.js';
+import * as Requests from './types/requests.js';
 
 
 // INTERNAL TYPES
