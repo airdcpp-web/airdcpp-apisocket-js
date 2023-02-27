@@ -1,6 +1,6 @@
-import type { JestConfigWithTsJest } from 'ts-jest';
+// import type { JestConfigWithTsJest } from 'ts-jest';
 
-const jestConfig: JestConfigWithTsJest = {
+const jestConfig = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   coverageDirectory: './coverage/',
