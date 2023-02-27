@@ -1,4 +1,6 @@
 import chalk from 'chalk';
+// @ts-ignore
+import { isBrowser } from 'is-in-browser';
 import invariant from 'invariant';
 export const LOG_NONE = 'none';
 export const LOG_ERROR = 'error';
@@ -14,7 +16,8 @@ const Severities = {
 };
 // Should we format the line with timestamp and coloring or let the logger implementation to handle it?
 // Do this when running in terminal (node.js/tests in browser env)
-const shouldFormatLine = true;
+const shouldFormatLine = !isBrowser ||
+    (process.env.NODE_ENV === 'test');
 const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }) => {
     const logLevel = Severities[logSetting];
     invariant(

@@ -5,6 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LOG_VERBOSE = exports.LOG_INFO = exports.LOG_WARN = exports.LOG_ERROR = exports.LOG_NONE = void 0;
 const chalk_1 = __importDefault(require("chalk"));
+// @ts-ignore
+const is_in_browser_1 = require("is-in-browser");
 const invariant_1 = __importDefault(require("invariant"));
 exports.LOG_NONE = 'none';
 exports.LOG_ERROR = 'error';
@@ -20,7 +22,8 @@ const Severities = {
 };
 // Should we format the line with timestamp and coloring or let the logger implementation to handle it?
 // Do this when running in terminal (node.js/tests in browser env)
-const shouldFormatLine = true;
+const shouldFormatLine = !is_in_browser_1.isBrowser ||
+    (process.env.NODE_ENV === 'test');
 const Logger = ({ logLevel: logSetting = exports.LOG_VERBOSE, logOutput = console }) => {
     const logLevel = Severities[logSetting];
     (0, invariant_1.default)(
