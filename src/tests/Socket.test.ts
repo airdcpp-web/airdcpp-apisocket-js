@@ -8,7 +8,6 @@ import ApiConstants from '../ApiConstants.js';
 import { HookCallback, HookSubscriberInfo } from '../types/subscriptions.js';
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
-import * as MockDate from 'mockdate';
 import waitForExpectOriginal from 'wait-for-expect';
 import { jest } from '@jest/globals';
 
@@ -22,6 +21,12 @@ const dummyfn = () => {
   // ..
 };
 
+const useFakeTimers = () => {
+  // Mocking performance would cause an error with Node 19, can be removed when using
+  // the latest version of Jest
+  jest.useFakeTimers({doNotFake: ['performance']});
+};
+
 // tslint:disable:no-empty
 describe('socket', () => {
   beforeEach(() => {
@@ -31,7 +36,6 @@ describe('socket', () => {
   afterEach(() => {
     server.stop();
     jest.useRealTimers();
-    MockDate.reset();
   });
 
   describe('auth', () => {
@@ -194,7 +198,7 @@ describe('socket', () => {
     test('should handle auto reconnect', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      jest.useFakeTimers();
+      useFakeTimers();
 
       socket.disconnect(true);
       jest.runOnlyPendingTimers();
@@ -235,7 +239,7 @@ describe('socket', () => {
     test('should cancel auto reconnect', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      jest.useFakeTimers();
+      useFakeTimers();
 
       // Disconnect with auto reconnect
       socket.disconnect(true);
@@ -282,7 +286,7 @@ describe('socket', () => {
       // Connect and disconnect
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      jest.useFakeTimers();
+      useFakeTimers();
       socket.disconnect();
       jest.runOnlyPendingTimers();
       expect(socket.isActive()).toEqual(false);
@@ -335,7 +339,7 @@ describe('socket', () => {
     test('should report request timeouts', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      jest.useFakeTimers();
+      useFakeTimers();
       socket.addListener('hubs', 'hub_updated', dummyfn)
         .catch(() => {});
       socket.addListener('hubs', 'hub_added', dummyfn)
@@ -343,7 +347,7 @@ describe('socket', () => {
 
       jest.advanceTimersByTime(35000);
 
-      MockDate.set(Date.now() + 35000);
+      jest.setSystemTime(new Date(Date.now() + 35000));
       (socket as any).reportRequestTimeouts();
 
       expect(mockConsole.warn.mock.calls.length).toBe(2);
