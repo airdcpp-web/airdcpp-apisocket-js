@@ -20,6 +20,7 @@
     "esModuleInterop": true
   },
   "exclude": [
-    "jest.config.ts",
+    "src/tests",
+    "jest.config.js",
   ]
 }
