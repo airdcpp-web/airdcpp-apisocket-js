@@ -25,7 +25,7 @@ const SocketRequestHandler = (
   { requestTimeout = 30, ignoredRequestPaths }: Options.SocketRequestOptions
 ) => {
 
-  let callbacks: { [key: number]: Callback } = {};
+  let callbacks: Record<string, Callback> = {};
   let currentCallbackId = 0;
   
   let timeoutReportInterval: any;
@@ -85,7 +85,7 @@ const SocketRequestHandler = (
     // Callback
     const resolver = Promise.pending();
 
-    callbacks[callbackId] = {
+    callbacks[callbackId.toString()] = {
       time: Date.now(),
       resolver,
       ignored,

@@ -97,8 +97,9 @@ If you are using AirDC++ Web Client, you can start the client with ``--cdm-clien
 The ADC protocol specifications can be found from http://adc.sourceforge.net/ADC.html
 
 
-[build-badge]: https://img.shields.io/travis/airdcpp-web/airdcpp-apisocket-js/master.svg?style=flat-square
-[build]: https://travis-ci.org/airdcpp-web/airdcpp-apisocket-js
+
+[build-badge]: https://github.com/airdcpp-web/airdcpp-apisocket-js/actions/workflows/node.js.yml/badge.svg
+[build]: https://github.com/airdcpp-web/airdcpp-apisocket-js/actions/workflows/node.js.yml
 
 [npm-badge]: https://img.shields.io/npm/v/airdcpp-apisocket.svg?style=flat-square
 [npm]: https://www.npmjs.org/package/airdcpp-apisocket

@@ -27,7 +27,7 @@ const Severities = {
 const shouldFormatLine = isJsDom || !isBrowser;
 
 const Logger = ({ logLevel: logSetting = LOG_VERBOSE, logOutput = console }: Options.LoggerOptions) => {
-  const logLevel = Severities[logSetting];
+  const logLevel = Severities[logSetting as keyof typeof Severities];
 
   invariant(
     // @ts-ignore: This condition will always return true since the function is always defined
