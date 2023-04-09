@@ -1,21 +1,16 @@
 import { 
   AUTH_RESPONSE, CONNECT_PARAMS, 
-  getConnectedSocket, getMockServer, getSocket
+  getConnectedSocket, getMockServer, getSocket, waitForExpect
 } from './helpers.js';
 
 import ApiConstants from '../ApiConstants.js';
 
-import { HookCallback, HookSubscriberInfo } from '../types/subscriptions.js';
+import { HookCallback, HookSubscriberInfo, SubscriptionRemoveHandler } from '../types/subscriptions.js';
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
-import waitForExpectOriginal from 'wait-for-expect';
 import { jest } from '@jest/globals';
 
 let server: ReturnType<typeof getMockServer>;
-
-const EXCEPT_TIMEOUT = 1000;
-const waitForExpect = (func: () => void | Promise<void>) => waitForExpectOriginal.default(func, EXCEPT_TIMEOUT);
-
 
 const dummyfn = () => {
   // ..
@@ -302,7 +297,7 @@ describe('socket', () => {
       socket.reconnect();
 
       {
-        const waitForExpectTask = waitForExpectOriginal.default(
+        const waitForExpectTask = waitForExpect(
           () => {
             jest.runOnlyPendingTimers();
             expect(authCallback.mock.calls.length).toBe(1);
@@ -494,7 +489,7 @@ describe('socket', () => {
 
     test('should handle hook actions', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
-      let removeListener = null;
+      let removeListener: SubscriptionRemoveHandler | null = null;
 
       // Add hook
       {

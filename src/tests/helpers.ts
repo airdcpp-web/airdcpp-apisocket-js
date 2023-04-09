@@ -7,6 +7,11 @@ import * as Options from '../types/options.js';
 import ApiConstants from '../ApiConstants.js';
 import { EventEmitter } from 'events';
 
+import waitForExpectOriginal from 'wait-for-expect';
+
+const EXCEPT_TIMEOUT = 1000;
+//@ts-ignore
+export const waitForExpect = (func: () => void | Promise<void>) => waitForExpectOriginal.default(func, EXCEPT_TIMEOUT);
 
 const VERBOSE = false;
 
@@ -131,8 +136,8 @@ const getMockServer = () => {
   mockServer.on('connection', s => {
     socket = s;
 
-    socket.on('message', (messageObj: string) => {
-      const request: OutgoingRequest = JSON.parse(messageObj);
+    socket.on('message', (messageObj) => {
+      const request: OutgoingRequest = JSON.parse(messageObj as string);
       emitter.emit(toEmitId(request.path, request.method), request, s);
     });
   });

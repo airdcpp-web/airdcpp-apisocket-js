@@ -1,9 +1,9 @@
 import { 
   getMockServer,
   getConnectedSocket,
+  waitForExpect,
 } from './helpers.js';
 
-import waitForExpect from 'wait-for-expect';
 import { jest } from '@jest/globals';
 
 import { addContextMenuItems } from '../PublicHelpers.js';
@@ -188,7 +188,7 @@ describe('public helpers', () => {
 
       // Validate list items results
       {
-        await waitForExpect.default(() => {
+        await waitForExpect(() => {
           expect(hookResolveCallback).toHaveBeenCalledTimes(1);
         });
 
@@ -198,7 +198,7 @@ describe('public helpers', () => {
           }),
         );
 
-        await waitForExpect.default(() => {
+        await waitForExpect(() => {
           expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
         });
         expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
@@ -226,7 +226,7 @@ describe('public helpers', () => {
 
       // Validate select event results
       {
-        await waitForExpect.default(() => {
+        await waitForExpect(() => {
           expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
         });
         expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS, FORM_VALUES);
