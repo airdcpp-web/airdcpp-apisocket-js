@@ -1,4 +1,4 @@
-import { ContextMenuItem } from './public_helpers.js';
+import { ContextMenuIcon, ContextMenuItem } from './public_helpers.js';
 
 
 export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
@@ -28,4 +28,6 @@ export type ResponseMenuItem<IdT, EntityIdT> = Omit<ContextMenuItem<IdT, EntityI
 
 export interface MenuItemListHookAcceptData<IdT, EntityIdT> {
   menuitems: ResponseMenuItem<IdT, EntityIdT>[];
+  icon?: ContextMenuIcon;
+  title?: string;
 }

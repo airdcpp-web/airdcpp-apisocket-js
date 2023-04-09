@@ -1,4 +1,4 @@
-import { HookSubscriberInfo, APISocket, ContextMenuItem, EntityId } from './types/index.js';
+import { APISocket, ContextMenuItem, EntityId, ContextMenu } from './types/index.js';
 import { 
   SelectedMenuItemListenerData, MenuItemListHookData, 
   MenuItemListHookAcceptData, ResponseMenuItemCallbackFields 
@@ -71,15 +71,15 @@ const parseCallbackData = async <IdT, EntityIdT extends EntityId | undefined = u
 
 export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | undefined = undefined>(
   socket: APISocket,
-  menuItems: ContextMenuItem<IdT, EntityIdT>[], 
-  menuId: string, 
-  subscriberInfo: HookSubscriberInfo
+  menuItems: ContextMenuItem<IdT, EntityIdT>[],
+  menuTypeId: string,
+  menu: ContextMenu
 ) => {
   const removeListener = await socket.addListener<SelectedMenuItemListenerData<IdT, EntityIdT>, EntityIdT>(
     'menus', 
-    `${menuId}_menuitem_selected`, 
+    `${menuTypeId}_menuitem_selected`, 
     async (data) => {
-      if (data.hook_id === subscriberInfo.id) {
+      if (data.hook_id === menu.id) {
         const menuItem = menuItems.find(i => data.menuitem_id === i.id);
         if (!!menuItem) {
           const isValid = await validateItem(menuItem, data);
@@ -97,7 +97,7 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
     MenuItemListHookAcceptData<IdT, EntityIdT> | undefined
   >(
     'menus', 
-    `${menuId}_list_menuitems`, 
+    `${menuTypeId}_list_menuitems`, 
     async (data, accept, reject) => {
       const validItems = [];
       for (const item of menuItems) {
@@ -118,10 +118,11 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
       }
 
       accept({
-        menuitems: validItems
+        menuitems: validItems,
+        icon: menu.icon,
       });
     }, 
-    subscriberInfo
+    menu
   );
 
   return () => {
