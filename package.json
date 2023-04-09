@@ -58,6 +58,6 @@
     "websocket": "^1.0.34"
   },
   "main": "./dist/NodeSocket.js",
-  "module": "./dist-es/NodeSocket.js",
+  "exports": "./dist-es/NodeSocket.js",
   "type": "module"
 }
