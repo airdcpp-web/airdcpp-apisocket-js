@@ -393,7 +393,7 @@ Optional form definitions:
 
 **`menuType`** (string, required)
 
-Menu type (see the (Menu API documentation)[https://airdcpp.docs.apiary.io/#reference/menus] for available types)
+Menu type (see the [Menu API documentation](https://airdcpp.docs.apiary.io/#reference/menus) for available types)
 
 **`subscriberInfo`** (object, required)
 
