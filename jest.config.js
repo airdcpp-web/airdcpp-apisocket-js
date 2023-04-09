@@ -13,9 +13,6 @@ const jestConfig = {
   roots: [
     '<rootDir>/src/'
   ],
-  transformIgnorePatterns: [
-    '<rootDir>\/node_modules\/(?!chalk)\/'
-  ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '#(.*)': '<rootDir>/node_modules/$1',
