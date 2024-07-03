@@ -15,11 +15,6 @@ const jestConfig = {
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '#(.*)': '<rootDir>/node_modules/$1',
-  },
-  transform: {
-    '^.+\\.jsx?$': 'babel-jest',
-    '^.+\\.tsx?$': 'ts-jest'
   },
 };
 
