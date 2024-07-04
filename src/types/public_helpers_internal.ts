@@ -6,7 +6,7 @@ export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
   menu_id: string;
   menuitem_id: string;
   selected_ids: IdT[];
-  entity_id: EntityIdT | null;
+  entity_id: EntityIdT;
   permissions: string[];
   supports: string[];
   form_values: object;
@@ -14,7 +14,7 @@ export interface SelectedMenuItemListenerData<IdT, EntityIdT> {
 
 export interface MenuItemListHookData<IdT, EntityIdT> {
   selected_ids: IdT[];
-  entity_id: EntityIdT | null;
+  entity_id: EntityIdT;
   permissions: string[];
   supports: string[];
 }

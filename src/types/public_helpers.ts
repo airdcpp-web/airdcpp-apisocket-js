@@ -2,7 +2,7 @@ import { HookSubscriberInfo } from './subscriptions.js';
 
 export interface MenuCallbackProperties<IdT, EntityIdT> {
   selectedIds: IdT[], 
-  entityId: EntityIdT | null, 
+  entityId: EntityIdT, 
   permissions: string[], 
   supports: string[]
 }
