@@ -8,7 +8,7 @@ import { jest } from '@jest/globals';
 
 import { addContextMenuItems } from '../PublicHelpers.js';
 import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from '../types/public_helpers_internal.js';
-import { HookSubscriberInfo } from '../types/index.js';
+import { HookSubscriberInfo, MenuCallbackProperties, MenuClickHandlerProperties } from '../types/index.js';
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 
@@ -123,42 +123,42 @@ describe('public helpers', () => {
         [
           {
             ...MENU_ITEM1,
-            filter: async (ids, entityId) => {
+            filter: async () => {
               return true;
             },
             access: VALID_ACCESS,
-            onClick: (ids, entityId, permissions, supports, formValues) => {
-              onClickItem1Mock(ids, entityId, permissions, supports, formValues);
+            onClick: (props) => {
+              onClickItem1Mock(props);
             },
-            formDefinitions: (ids, entityId, permissions, supports) => {
+            formDefinitions: () => {
               return FORM_DEFINITIONS;
             },
           }, {
             ...MENU_ITEM2,
-            onClick: (ids, entityId) => {
-              onClickItem2Mock(ids, entityId);
+            onClick: (props) => {
+              onClickItem2Mock(props);
             }
           }, {
             ...MENU_ITEM3,
-            urls: (ids, entityId, permissions, supports) => {
-              onGetUrlsItem3Mock(ids, entityId, permissions, supports);
+            urls: (props) => {
+              onGetUrlsItem3Mock(props);
               return URLS;
             }
           }, {
             id: 'ignored_filter_id',
             title: 'Mock item ignored by filter',
-            filter: (ids, entityId, permissions, supports) => {
+            filter: () => {
               return false;
             },
-            onClick: (ids, entityId, permissions, supports, formValues) => {
-              onClickItemIgnoredMock(ids, entityId, permissions, supports, formValues);
+            onClick: (props) => {
+              onClickItemIgnoredMock(props);
             }
           }, {
             id: 'ignored_access_id',
             title: 'Mock item ignored by access',
             access: 'invalid_access',
-            onClick: (ids, entityId, permissions, supports, formValues) => {
-              onClickItemIgnoredMock(ids, entityId, permissions, supports, formValues);
+            onClick: (props) => {
+              onClickItemIgnoredMock(props);
             }
           }
         ],
@@ -166,8 +166,8 @@ describe('public helpers', () => {
         SUBSCRIBER_INFO,
       );
       
-      expect(listenerAddCallback).toBeCalledTimes(1);
-      expect(hookAddCallback).toBeCalledTimes(1);
+      expect(listenerAddCallback).toHaveBeenCalledTimes(1);
+      expect(hookAddCallback).toHaveBeenCalledTimes(1);
 
 
       // List items hook
@@ -192,7 +192,7 @@ describe('public helpers', () => {
           expect(hookResolveCallback).toHaveBeenCalledTimes(1);
         });
 
-        expect(hookResolveCallback).toBeCalledWith(
+        expect(hookResolveCallback).toHaveBeenCalledWith(
           expect.objectContaining({
             data: menuItemListData
           }),
@@ -201,7 +201,15 @@ describe('public helpers', () => {
         await waitForExpect(() => {
           expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
         });
-        expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS);
+
+        const urlCallbackProps: MenuCallbackProperties<string, null> = {
+          selectedIds: selectedMenuIds, 
+          entityId: null, 
+          permissions: PERMISSIONS, 
+          supports: SUPPORTS
+        }
+
+        expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(urlCallbackProps);
       }
 
       // Select event listener
@@ -229,9 +237,18 @@ describe('public helpers', () => {
         await waitForExpect(() => {
           expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
         });
-        expect(onClickItem1Mock).toHaveBeenCalledWith(selectedMenuIds, null, PERMISSIONS, SUPPORTS, FORM_VALUES);
-        expect(onClickItem2Mock).not.toBeCalled();
-        expect(onClickItemIgnoredMock).not.toBeCalled();
+
+        const clickHandlerProps: MenuClickHandlerProperties<string, null> = {
+          selectedIds: selectedMenuIds, 
+          entityId: null, 
+          permissions: PERMISSIONS, 
+          supports: SUPPORTS, 
+          formValues: FORM_VALUES
+        }
+
+        expect(onClickItem1Mock).toHaveBeenCalledWith(clickHandlerProps);
+        expect(onClickItem2Mock).not.toHaveBeenCalled();
+        expect(onClickItemIgnoredMock).not.toHaveBeenCalled();
       }
 
       // Remove items

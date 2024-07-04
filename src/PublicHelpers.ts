@@ -30,7 +30,12 @@ const validateItem = async <IdT, EntityIdT>(
     return false;
   }
 
-  if (!!menuItem.filter && !(await menuItem.filter(selected_ids, entity_id, permissions, supports))) {
+  if (!!menuItem.filter && !(await menuItem.filter({
+    selectedIds: selected_ids, 
+    entityId: entity_id, 
+    permissions, 
+    supports
+  }))) {
     return false;
   }
 
@@ -42,10 +47,17 @@ const parseCallbackData = async <IdT, EntityIdT extends EntityId | undefined = u
   data: MenuItemListHookData<IdT, EntityIdT>
 ): Promise<ResponseMenuItemCallbackFields> => {
   const { selected_ids, entity_id, permissions, supports } = data;
+  const callbackProps = {
+    selectedIds: selected_ids, 
+    entityId: entity_id, 
+    permissions, 
+    supports
+  }
+
   if (!!item.urls && !!item.urls.length) {
     let urls: string[] | undefined;
     if (typeof item.urls === 'function') {
-      urls = await item.urls(selected_ids, entity_id, permissions, supports);
+      urls = await item.urls(callbackProps);
     } else {
       urls = item.urls;
     }
@@ -56,7 +68,7 @@ const parseCallbackData = async <IdT, EntityIdT extends EntityId | undefined = u
   } else if (!!item.formDefinitions && hasSupport(FORM_SUPPORT, supports)) {
     let formDefinitions: object[] | undefined;
     if (typeof item.formDefinitions === 'function') {
-      formDefinitions = await item.formDefinitions(selected_ids, entity_id, permissions, supports);
+      formDefinitions = await item.formDefinitions(callbackProps);
     } else {
       formDefinitions = item.formDefinitions;
     }
@@ -85,7 +97,13 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
           const isValid = await validateItem(menuItem, data);
           if (isValid && !!menuItem.onClick) {
             const { selected_ids, entity_id, permissions, supports, form_values } = data;
-            menuItem.onClick(selected_ids, entity_id, permissions, supports, form_values);
+            menuItem.onClick({
+              selectedIds: selected_ids, 
+              entityId: entity_id, 
+              permissions, 
+              supports, 
+              formValues: form_values
+            });
           }
         }
       }

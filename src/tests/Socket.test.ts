@@ -16,12 +16,6 @@ const dummyfn = () => {
   // ..
 };
 
-const useFakeTimers = () => {
-  // Mocking performance would cause an error with Node 19, can be removed when using
-  // the latest version of Jest
-  jest.useFakeTimers({doNotFake: ['performance']});
-};
-
 // tslint:disable:no-empty
 describe('socket', () => {
   beforeEach(() => {
@@ -193,7 +187,7 @@ describe('socket', () => {
     test('should handle auto reconnect', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      useFakeTimers();
+      jest.useFakeTimers();
 
       socket.disconnect(true);
       jest.runOnlyPendingTimers();
@@ -234,7 +228,7 @@ describe('socket', () => {
     test('should cancel auto reconnect', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      useFakeTimers();
+      jest.useFakeTimers();
 
       // Disconnect with auto reconnect
       socket.disconnect(true);
@@ -281,7 +275,7 @@ describe('socket', () => {
       // Connect and disconnect
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      useFakeTimers();
+      jest.useFakeTimers();
       socket.disconnect();
       jest.runOnlyPendingTimers();
       expect(socket.isActive()).toEqual(false);
@@ -334,7 +328,7 @@ describe('socket', () => {
     test('should report request timeouts', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      useFakeTimers();
+      jest.useFakeTimers();
       socket.addListener('hubs', 'hub_updated', dummyfn)
         .catch(() => {});
       socket.addListener('hubs', 'hub_added', dummyfn)
