@@ -34,19 +34,19 @@ const getMockConsole = () => ({
   }),
 });
 
-const CONNECT_PARAMS = {
+const DEFAULT_CONNECT_PARAMS = {
   username: 'test',
   password: 'test',
   url: 'ws://localhost:7171/api/v1/',
 };
 
 const getDefaultSocketOptions = (mockConsole: Options.LogOutput): Options.APISocketOptions => ({
-  ...CONNECT_PARAMS,
+  ...DEFAULT_CONNECT_PARAMS,
   logOutput: mockConsole,
   logLevel: VERBOSE ? 'verbose' : 'warn',
 });
 
-const AUTH_RESPONSE = {
+const DEFAULT_AUTH_RESPONSE = {
   auth_token: 'b823187f-4aab-4b71-9764-e63e88401a26',
   refresh_token: '5124faasf-4aab-4b71-9764-e63e88401a26',
   user: {
@@ -72,12 +72,11 @@ export type MockSocketOptions = Omit<Options.APISocketOptions, 'username' | 'pas
   url?: string;
 };
 
-const getSocket = (options: MockSocketOptions = {}) => {
-  const mockConsole = getMockConsole();
+const getSocket = (socketOptions: MockSocketOptions = {}, mockConsole = getMockConsole()) => {
   const socket = Socket(
     {
       ...getDefaultSocketOptions(mockConsole),
-      ...options,
+      ...socketOptions,
     }, 
     WebSocket as any
   );
@@ -88,14 +87,30 @@ const getSocket = (options: MockSocketOptions = {}) => {
 
 type Callback = (requestData: object) => void;
 
+interface ConnectOptions {
+  socketOptions?: MockSocketOptions;
+  authCallback?: Callback;
+  authResponse?: object;
+  console?: ReturnType<typeof getMockConsole>;
+}
+
+const getDefaultConnectOptions = () => ({
+  console: getMockConsole(),
+  authResponse: DEFAULT_AUTH_RESPONSE,
+});
+
 const getConnectedSocket = async (
   server: ReturnType<typeof getMockServer>, 
-  options?: MockSocketOptions, 
-  authCallback?: Callback
+  userOptions?: ConnectOptions,
 ) => {
-  server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE, authCallback);
+  const options = {
+    ...getDefaultConnectOptions(),
+    ...userOptions,
+  };
 
-  const { socket, mockConsole } = getSocket(options);
+  server.addDataHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
+
+  const { socket, mockConsole } = getSocket(options.socketOptions, options.console);
   await socket.connect();
 
   return { socket, mockConsole };
@@ -105,8 +120,8 @@ const toEmitId = (path: string, method: string) => {
   return `${path}_${method}`;
 };
 
-const getMockServer = () => {
-  const mockServer = new Server(CONNECT_PARAMS.url);
+const getMockServer = (url = DEFAULT_CONNECT_PARAMS.url) => {
+  const mockServer = new Server(url);
   let socket: Client;
   const emitter = new EventEmitter();
 
@@ -192,4 +207,4 @@ const getMockServer = () => {
   };
 };
 
-export { getMockServer, getSocket, getConnectedSocket, CONNECT_PARAMS, AUTH_RESPONSE };
+export { getMockServer, getSocket, getConnectedSocket, DEFAULT_CONNECT_PARAMS, DEFAULT_AUTH_RESPONSE };

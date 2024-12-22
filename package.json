@@ -42,7 +42,7 @@
     "@babel/preset-env": "^7.20.2",
     "@types/invariant": "^2.2.35",
     "@types/jest": "^29.5.12",
-    "@types/node": "^20.14.9",
+    "@types/node": "^22.10.2",
     "jest": "^29.7.0",
     "jest-cli": "^29.7.0",
     "jest-environment-node-debug": "^2.0.0",
@@ -57,6 +57,9 @@
     "websocket": "^1.0.34"
   },
   "main": "./dist/NodeSocket.js",
-  "exports": "./dist-es/NodeSocket.js",
+  "exports": {
+    ".": "./dist-es/NodeSocket.js",
+    "./tests/": "./dist-es/tests/"
+  },
   "type": "module"
 }

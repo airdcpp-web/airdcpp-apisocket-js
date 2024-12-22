@@ -1,5 +1,5 @@
 import { 
-  AUTH_RESPONSE, CONNECT_PARAMS, 
+  DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_PARAMS, 
   getConnectedSocket, getMockServer, getSocket, waitForExpect
 } from './helpers.js';
 
@@ -29,15 +29,15 @@ describe('socket', () => {
 
   describe('auth', () => {
     test('should handle valid credentials', async () => {
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE);
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
       const { socket, mockConsole } = getSocket();
       socket.onConnected = connectedCallback;
       const response = await socket.connect();
 
-      expect(connectedCallback).toHaveBeenCalledWith(AUTH_RESPONSE);
-      expect(response).toEqual(AUTH_RESPONSE);
+      expect(connectedCallback).toHaveBeenCalledWith(DEFAULT_AUTH_RESPONSE);
+      expect(response).toEqual(DEFAULT_AUTH_RESPONSE);
       expect(socket.isConnected()).toEqual(true);
 
       expect(mockConsole.warn.mock.calls.length).toBe(0);
@@ -48,15 +48,15 @@ describe('socket', () => {
     });
 
     test('should handle valid refresh token', async () => {
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE);
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
       const { socket, mockConsole } = getSocket();
       socket.onConnected = connectedCallback;
       const response = await socket.connectRefreshToken('refresh token');
 
-      expect(connectedCallback).toHaveBeenCalledWith(AUTH_RESPONSE);
-      expect(response).toEqual(AUTH_RESPONSE);
+      expect(connectedCallback).toHaveBeenCalledWith(DEFAULT_AUTH_RESPONSE);
+      expect(response).toEqual(DEFAULT_AUTH_RESPONSE);
       expect(socket.isConnected()).toEqual(true);
 
       expect(mockConsole.warn.mock.calls.length).toBe(0);
@@ -96,7 +96,7 @@ describe('socket', () => {
       // Fail without a server handler with auto reconnect disabled
       let error;
       try {
-        await socket.connect(CONNECT_PARAMS.username, CONNECT_PARAMS.password, false);
+        await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
       } catch (e) {
         error = e;
       }
@@ -106,9 +106,9 @@ describe('socket', () => {
 
       // Valid connect attempt
       server = getMockServer();
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE);
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
 
-      await socket.connect(CONNECT_PARAMS.username, CONNECT_PARAMS.password, false);
+      await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
 
       expect(socket.isConnected()).toEqual(true);
 
@@ -285,7 +285,7 @@ describe('socket', () => {
       server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400);
       
       const authCallback = jest.fn();
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, AUTH_RESPONSE, authCallback);
+      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
 
       jest.runOnlyPendingTimers();
       socket.reconnect();
@@ -525,7 +525,9 @@ describe('socket', () => {
   describe('logging', () => {
     const connect = async (logLevel: string) => {
       const { socket, mockConsole } = await getConnectedSocket(server, {
-        logLevel,
+        socketOptions: {
+          logLevel,
+        },
       });
 
       socket.disconnect(true);
