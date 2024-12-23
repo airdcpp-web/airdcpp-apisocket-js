@@ -204,6 +204,7 @@ const getMockServer = (url = DEFAULT_CONNECT_PARAMS.url) => {
     send: (data: object) => {
       socket.send(JSON.stringify(data));
     },
+    url,
   };
 };
 
