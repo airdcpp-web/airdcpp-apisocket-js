@@ -1,7 +1,7 @@
 import { 
   DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_PARAMS, 
-  getConnectedSocket, getMockServer, getSocket, waitForExpect
-} from './helpers.js';
+  getConnectedSocket, getMockServer, getSocket
+} from './mock-server.js';
 
 import ApiConstants from '../ApiConstants.js';
 
@@ -9,6 +9,7 @@ import { HookCallback, HookSubscriberInfo, SubscriptionRemoveHandler } from '../
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 import { jest } from '@jest/globals';
+import { waitForExpect } from './test-utils.js';
 
 let server: ReturnType<typeof getMockServer>;
 
@@ -29,7 +30,7 @@ describe('socket', () => {
 
   describe('auth', () => {
     test('should handle valid credentials', async () => {
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
       const { socket, mockConsole } = getSocket();
@@ -48,7 +49,7 @@ describe('socket', () => {
     });
 
     test('should handle valid refresh token', async () => {
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
       const { socket, mockConsole } = getSocket();
@@ -106,7 +107,7 @@ describe('socket', () => {
 
       // Valid connect attempt
       server = getMockServer();
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
 
       await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
 
@@ -125,17 +126,19 @@ describe('socket', () => {
       socket.onDisconnected = disconnectedCallback;
 
       // Dummy listener
-      server.addDataHandler('POST', 'hubs/listeners/hub_updated', undefined);
+      server.addRequestHandler('POST', 'hubs/listeners/hub_updated', undefined);
       await socket.addListener('hubs', 'hub_updated', dummyfn);
 
       // Dummy pending request
+      server.ignoreMissingHandler('DELETE', 'dummyLogoutDelete');
+
       socket.delete('dummyLogoutDelete').catch((error: Error) => {
         // TODO: fix, too unreliable at the moment (depends on the timings)
         //expect(error.message).toEqual('Socket disconnected');
       });
 
       // Logout
-      server.addDataHandler('DELETE', ApiConstants.LOGOUT_URL);
+      server.addRequestHandler('DELETE', ApiConstants.LOGOUT_URL);
       await socket.logout();
 
       expect(sessionResetCallback.mock.calls.length).toBe(1);
@@ -206,7 +209,7 @@ describe('socket', () => {
       expect(mockConsole.error.mock.calls.length).toBe(1);
 
       server = getMockServer();
-      server.addDataHandler('POST', ApiConstants.CONNECT_URL, undefined);
+      server.addRequestHandler('POST', ApiConstants.CONNECT_URL, undefined);
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
@@ -257,7 +260,7 @@ describe('socket', () => {
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
 
-      server.addDataHandler('POST', ApiConstants.CONNECT_URL, undefined);
+      server.addRequestHandler('POST', ApiConstants.CONNECT_URL, undefined);
       await socket.reconnect();
       expect(socket.isConnected()).toEqual(true);
 
@@ -285,7 +288,7 @@ describe('socket', () => {
       server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400);
       
       const authCallback = jest.fn();
-      server.addDataHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
 
       jest.runOnlyPendingTimers();
       socket.reconnect();
@@ -327,6 +330,9 @@ describe('socket', () => {
   describe('requests', () => {
     test('should report request timeouts', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
+
+      server.ignoreMissingHandler('POST', 'hubs/listeners/hub_updated');
+      server.ignoreMissingHandler('POST', 'hubs/listeners/hub_added');
 
       jest.useFakeTimers();
       socket.addListener('hubs', 'hub_updated', dummyfn)
@@ -388,8 +394,8 @@ describe('socket', () => {
 
     test('should handle listener messages', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
-      server.addDataHandler('POST', 'hubs/listeners/hub_updated', undefined);
-      server.addDataHandler('POST', `hubs/${entityId}/listeners/hub_updated`, undefined);
+      server.addSubscriptionHandler('hubs', 'hub_updated');
+      server.addSubscriptionHandler('hubs', 'hub_updated', entityId);
 
       const commonSubscriptionCallback = jest.fn();
       const entitySubscriptionCallback = jest.fn();
@@ -415,8 +421,7 @@ describe('socket', () => {
     test('should handle listener removal', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      const subscribeCallback = jest.fn();
-      server.addDataHandler('POST', 'hubs/listeners/hub_updated', undefined, subscribeCallback);
+      const hubUpdatedListener = server.addSubscriptionHandler('hubs', 'hub_updated');
 
       // Add two simultaneous pending add events
       const p1 = socket.addListener('hubs', 'hub_updated', dummyfn);
@@ -428,17 +433,14 @@ describe('socket', () => {
       const removeListener1 = await p1;
       const removeListener2 = await p2;
 
-      expect(subscribeCallback.mock.calls.length).toBe(1);
+      expect(hubUpdatedListener.subscribeFn.mock.calls.length).toBe(1);
       expect(socket.getPendingSubscriptionCount()).toBe(0);
 
-      const deleteCallback = jest.fn();
-      server.addDataHandler('DELETE', 'hubs/listeners/hub_updated', undefined, deleteCallback);
-
       removeListener1();
-      expect(deleteCallback.mock.calls.length).toBe(0); // Shouldn't call API yet, still one left
+      expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(0); // Shouldn't call API yet, still one left
 
       removeListener2();
-      await waitForExpect(() => expect(deleteCallback.mock.calls.length).toBe(1));
+      await waitForExpect(() => expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(1));
 
       expect(socket.hasListeners()).toBe(false);
 
@@ -466,11 +468,9 @@ describe('socket', () => {
   });
 
   describe('hooks', () => {
-    const hookEventData: IncomingSubscriptionEvent = {
-      event: 'queue_bundle_finished_hook',
-      data: {},
-      completion_id: 1,
-    };
+    const HOOK_MODULE = 'queue';
+    const HOOK_NAME = 'queue_bundle_finished_hook';
+    const HOOK_COMPLETION_ID = 1;
 
     const hookSubscriberInfo: HookSubscriberInfo = {
       id: 'sfv_checker', 
@@ -487,26 +487,22 @@ describe('socket', () => {
 
       // Add hook
       {
-        const hookAddCallback = jest.fn();
-        server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished_hook', undefined, hookAddCallback);
+        const hook = server.addHookHandler(HOOK_MODULE, HOOK_NAME);
 
         removeListener = await socket.addHook(
-          'queue', 
-          'queue_bundle_finished_hook', 
+          HOOK_MODULE, 
+          HOOK_NAME, 
           rejectCallback, 
           hookSubscriberInfo
         );
 
-        expect((hookAddCallback.mock.calls[0][0] as any).data).toEqual(hookSubscriberInfo);
-        expect(hookAddCallback.mock.calls.length).toBe(1);
-      }
+        expect((hook.subscribeFn.mock.calls[0][0] as any).data).toEqual(hookSubscriberInfo);
+        expect(hook.subscribeFn.mock.calls.length).toBe(1);
 
-      // Simulate action
-      {
-        const hookEventCallback = jest.fn();
-        server.addDataHandler('POST', 'queue/hooks/queue_bundle_finished_hook/1/reject', undefined, hookEventCallback);
-        server.send(hookEventData);
-        await waitForExpect(() => expect(hookEventCallback.mock.calls.length).toBe(1));
+        // Simulate action
+        const hookResolver = hook.addResolver(HOOK_COMPLETION_ID);
+        hookResolver.fire({});
+        await waitForExpect(() => expect(hookResolver.rejectFn.mock.calls.length).toBe(1));
       }
 
       // Clean up

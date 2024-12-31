@@ -8,7 +8,7 @@
       "name": "Run Tests With Debugger",
       "type": "node",
       "request": "launch",
-      "port": 5858,
+      // "port": 5858,
       //"stopOnEntry": false,
       "runtimeArgs": [
         "--inspect-brk=5858",

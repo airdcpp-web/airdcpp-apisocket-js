@@ -1,15 +1,14 @@
 import { 
   getMockServer,
   getConnectedSocket,
-  waitForExpect,
-} from './helpers.js';
+} from './mock-server.js';
+import { waitForExpect } from './test-utils.js';
 
 import { jest } from '@jest/globals';
 
 import { addContextMenuItems } from '../PublicHelpers.js';
 import { SelectedMenuItemListenerData, MenuItemListHookData, MenuItemListHookAcceptData } from '../types/public_helpers_internal.js';
 import { HookSubscriberInfo, MenuCallbackProperties, MenuClickHandlerProperties } from '../types/index.js';
-import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 
 let server: ReturnType<typeof getMockServer>;
@@ -97,19 +96,10 @@ describe('public helpers', () => {
       // Socket handlers
       const { socket } = await getConnectedSocket(server);
 
-      const listenerAddCallback = jest.fn();
-      server.addDataHandler('POST', `menus/listeners/${MENU_ID}_menuitem_selected`, undefined, listenerAddCallback);
+      const itemSelectedListener = server.addSubscriptionHandler('menus', `${MENU_ID}_menuitem_selected`);
 
-      const hookAddCallback = jest.fn();
-      const hookResolveCallback = jest.fn();
-      server.addDataHandler('POST', `menus/hooks/${MENU_ID}_list_menuitems`, undefined, hookAddCallback);
-      server.addDataHandler(
-        'POST', 
-        `menus/hooks/${MENU_ID}_list_menuitems/${HOOK_COMPLETION_ID}/resolve`, 
-        menuItemListData, 
-        hookResolveCallback
-      );
-
+      const listItemsHook = server.addHookHandler('menus', `${MENU_ID}_list_menuitems`);
+      const listItemsResolver = listItemsHook.addResolver(HOOK_COMPLETION_ID);
 
       // Add menu items
       const onClickItem1Mock = jest.fn();
@@ -166,33 +156,29 @@ describe('public helpers', () => {
         SUBSCRIBER_INFO,
       );
       
-      expect(listenerAddCallback).toHaveBeenCalledTimes(1);
-      expect(hookAddCallback).toHaveBeenCalledTimes(1);
+      expect(itemSelectedListener.subscribeFn).toHaveBeenCalledTimes(1);
+      expect(listItemsHook.subscribeFn).toHaveBeenCalledTimes(1);
 
 
       // List items hook
       {
-        const hookEventData: IncomingSubscriptionEvent<MenuItemListHookData<string, null>> = {
-          event: `${MENU_ID}_list_menuitems`,
-          data: {
-            selected_ids: selectedMenuIds,
-            entity_id: null,
-            permissions: PERMISSIONS,
-            supports: SUPPORTS,
-          },
-          completion_id: 1,
+        const menuItemListData: MenuItemListHookData<string, null> = {
+          selected_ids: selectedMenuIds,
+          entity_id: null,
+          permissions: PERMISSIONS,
+          supports: SUPPORTS,
         };
 
-        server.send(hookEventData);
+        listItemsResolver.fire(menuItemListData);
       }
 
       // Validate list items results
       {
         await waitForExpect(() => {
-          expect(hookResolveCallback).toHaveBeenCalledTimes(1);
+          expect(listItemsResolver.resolveFn).toHaveBeenCalledTimes(1);
         });
 
-        expect(hookResolveCallback).toHaveBeenCalledWith(
+        expect(listItemsResolver.resolveFn).toHaveBeenCalledWith(
           expect.objectContaining({
             data: menuItemListData
           }),
@@ -214,22 +200,18 @@ describe('public helpers', () => {
 
       // Select event listener
       {
-        const selectEventData: IncomingSubscriptionEvent<SelectedMenuItemListenerData<string, null>> = {
-          event: `${MENU_ID}_menuitem_selected`,
-          data: {
-            menuitem_id: MENU_ITEM1_ID,
-            hook_id: SUBSCRIBER_INFO.id,
-            menu_id: MENU_ID,
-            entity_id: null,
-            selected_ids: selectedMenuIds,
-            permissions: PERMISSIONS,
-            supports: SUPPORTS,
-            form_values: FORM_VALUES
-          },
-          completion_id: HOOK_COMPLETION_ID,
+        const selectData: SelectedMenuItemListenerData<string, null> = {
+          menuitem_id: MENU_ITEM1_ID,
+          hook_id: SUBSCRIBER_INFO.id,
+          menu_id: MENU_ID,
+          entity_id: null,
+          selected_ids: selectedMenuIds,
+          permissions: PERMISSIONS,
+          supports: SUPPORTS,
+          form_values: FORM_VALUES
         };
 
-        server.send(selectEventData);
+        itemSelectedListener.fire(selectData);
       }
 
       // Validate select event results

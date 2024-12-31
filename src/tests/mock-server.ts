@@ -7,15 +7,9 @@ import * as Options from '../types/options.js';
 import ApiConstants from '../ApiConstants.js';
 import { EventEmitter } from 'events';
 
-import waitForExpectOriginal from 'wait-for-expect';
-
-const EXCEPT_TIMEOUT = 1000;
-//@ts-ignore
-export const waitForExpect = (func: () => void | Promise<void>) => waitForExpectOriginal.default(func, EXCEPT_TIMEOUT);
-
 const VERBOSE = false;
 
-const getMockConsole = () => ({
+export const getMockConsole = () => ({
   log: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
     if (VERBOSE) {
       console.log(a1, a2, a3, a4);
@@ -108,7 +102,7 @@ const getConnectedSocket = async (
     ...userOptions,
   };
 
-  server.addDataHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
+  server.addRequestHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
 
   const { socket, mockConsole } = getSocket(options.socketOptions, options.console);
   await socket.connect();
@@ -120,10 +114,29 @@ const toEmitId = (path: string, method: string) => {
   return `${path}_${method}`;
 };
 
-const getMockServer = (url = DEFAULT_CONNECT_PARAMS.url) => {
+interface MockServerOptions {
+  url: string;
+  reportMissingListeners?: boolean;
+}
+
+const DEFAULT_MOCK_SERVER_OPTIONS: MockServerOptions = {
+  url: DEFAULT_CONNECT_PARAMS.url,
+  reportMissingListeners: true,
+}
+
+const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
+  const { url, reportMissingListeners }: MockServerOptions = {
+    ...DEFAULT_MOCK_SERVER_OPTIONS,
+    ...initialOptions,
+  };
+
   const mockServer = new Server(url);
   let socket: Client;
   const emitter = new EventEmitter();
+
+  const send = (data: object) => {
+    socket.send(JSON.stringify(data));
+  };
 
   const addServerHandler = <DataT extends object | undefined>(
     method: string, 
@@ -148,12 +161,145 @@ const getMockServer = (url = DEFAULT_CONNECT_PARAMS.url) => {
     );
   };
 
+  const addDummyDataHandler = (method: string, path: string) => {
+    emitter.addListener(
+      toEmitId(path, method), 
+      (request: OutgoingRequest, s: WebSocket) => {
+        // Do nothing
+      }
+    );
+  }
+
+  const addRequestHandler = <DataT extends object | undefined>(
+    method: string, 
+    path: string, 
+    data?: DataT, 
+    subscriptionCallback?: Callback
+  ) => {
+    addServerHandler<DataT>(
+      method, 
+      path, {
+        data,
+        code: 200,
+      }, 
+      subscriptionCallback
+    );
+  }
+
+  const addErrorHandler = (
+    method: string, 
+    path: string, 
+    errorStr: string | null, 
+    errorCode: number, 
+    subscriptionCallback?: Callback
+  ) => {
+    addServerHandler(
+      method, 
+      path, 
+      {
+        error: !errorStr ? null as any : {
+          message: errorStr,
+        },
+        code: errorCode,
+      }, 
+      subscriptionCallback
+    );
+  }
+
+  const addSubscriptionHandlerImpl = (
+    moduleName: string,
+    type: string,
+    listenerName: string,
+    entityId?: string | number,
+  ) => {
+    const subscribeFn = jest.fn();
+    const unsubscribeFn = jest.fn();
+
+    const path = entityId ? `${moduleName}/${entityId}/${type}/${listenerName}` : `${moduleName}/${type}/${listenerName}`;
+
+    addRequestHandler('POST', path, undefined, subscribeFn);
+    addRequestHandler('DELETE', path, undefined, unsubscribeFn);
+
+    const fire = (data: object, entityId?: string | number) => {
+      send({
+        event: listenerName,
+        data,
+        id: entityId,
+      });
+    }
+
+    return {
+      fire,
+
+      subscribeFn,
+      unsubscribeFn,
+
+      path,
+    }
+  }
+  
+
+  const addSubscriptionHandler = (
+    moduleName: string,
+    listenerName: string,
+    entityId?: string | number,
+  ) => {
+    return addSubscriptionHandlerImpl(moduleName, 'listeners', listenerName, entityId);
+  }
+
+  const addHookHandler = (
+    moduleName: string,
+    listenerName: string,
+  ) => {
+    const subscriber = addSubscriptionHandlerImpl(moduleName, 'hooks', listenerName);
+
+    const addResolver = (completionId: number) => {
+      const resolveFn = jest.fn();
+      const rejectFn = jest.fn();
+
+      addRequestHandler(
+        'POST', 
+        `${subscriber.path}/${completionId}/resolve`, 
+        undefined, 
+        resolveFn
+      );
+
+      addRequestHandler(
+        'POST', 
+        `${subscriber.path}/${completionId}/reject`, 
+        undefined, 
+        rejectFn
+      );
+
+      const fire = (data: object) => {
+        send({
+          event: listenerName,
+          data,
+          completion_id: completionId,
+        });
+      }
+
+      return { fire, resolveFn, rejectFn };
+    };
+
+    return {
+      addResolver,
+
+      ...subscriber,
+    }
+  }
+
+
   mockServer.on('connection', s => {
     socket = s;
 
     socket.on('message', (messageObj) => {
       const request: OutgoingRequest = JSON.parse(messageObj as string);
-      emitter.emit(toEmitId(request.path, request.method), request, s);
+      const emitId = toEmitId(request.path, request.method);
+      const processed = emitter.emit(emitId, request, s);
+      if (reportMissingListeners && !processed) {
+        console.warn(`Mock server: no listeners for event ${request.method} ${request.path}`);
+      }
     });
   });
 
@@ -162,48 +308,19 @@ const getMockServer = (url = DEFAULT_CONNECT_PARAMS.url) => {
   });
 
   return {
-    addDataHandler: <DataT extends object | undefined>(
-      method: string, 
-      path: string, 
-      data?: DataT, 
-      subscriptionCallback?: Callback
-    ) => {
-      addServerHandler<DataT>(
-        method, 
-        path, {
-          data,
-          code: 200,
-        }, 
-        subscriptionCallback
-      );
-    },
-    addErrorHandler: (
-      method: string, 
-      path: string, 
-      errorStr: string | null, 
-      errorCode: number, 
-      subscriptionCallback?: Callback
-    ) => {
-      addServerHandler(
-        method, 
-        path, 
-        {
-          error: !errorStr ? null as any : {
-            message: errorStr,
-          },
-          code: errorCode,
-        }, 
-        subscriptionCallback
-      );
-    },
+    addRequestHandler,
+    addErrorHandler,
+
+    addSubscriptionHandler,
+    addHookHandler,
+
+    ignoreMissingHandler: addDummyDataHandler,
     stop: () => {
       mockServer.stop(() => {
         // ...
       });
     },
-    send: (data: object) => {
-      socket.send(JSON.stringify(data));
-    },
+    send,
     url,
   };
 };
