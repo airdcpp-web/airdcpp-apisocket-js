@@ -124,6 +124,10 @@ const DEFAULT_MOCK_SERVER_OPTIONS: MockServerOptions = {
   reportMissingListeners: true,
 }
 
+type MockRequestResponseDataObject<DataT extends object | undefined> = Omit<RequestSuccessResponse<DataT>, 'callback_id'> | Omit<RequestErrorResponse, 'callback_id'>;
+type MockRequestResponseDataHandler<DataT extends object | undefined> = (request: OutgoingRequest, s: WebSocket) => MockRequestResponseDataObject<DataT>;
+type MockRequestResponseData<DataT extends object | undefined> = MockRequestResponseDataObject<DataT> | MockRequestResponseDataHandler<DataT>;
+
 const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   const { url, reportMissingListeners }: MockServerOptions = {
     ...DEFAULT_MOCK_SERVER_OPTIONS,
@@ -141,7 +145,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   const addServerHandler = <DataT extends object | undefined>(
     method: string, 
     path: string, 
-    responseData: Omit<RequestSuccessResponse<DataT>, 'callback_id'> | Omit<RequestErrorResponse, 'callback_id'>, 
+    responseData: MockRequestResponseData<DataT>,
     subscriptionCallback?: Callback
   ) => {
     emitter.addListener(
@@ -151,9 +155,10 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
           subscriptionCallback(request);
         }
 
+        const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
         const response: RequestSuccessResponse | RequestErrorResponse = {
           callback_id: request.callback_id,
-          ...responseData,
+          ...data,
         };
 
         s.send(JSON.stringify(response));
@@ -173,15 +178,18 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   const addRequestHandler = <DataT extends object | undefined>(
     method: string, 
     path: string, 
-    data?: DataT, 
+    data?: DataT | MockRequestResponseDataHandler<DataT>, 
     subscriptionCallback?: Callback
   ) => {
+    const handlerData = typeof data === 'function' ? data : {
+      data,
+      code: data ? 200 : 204,
+    }
+
     addServerHandler<DataT>(
       method, 
-      path, {
-        data,
-        code: 200,
-      }, 
+      path, 
+      handlerData, 
       subscriptionCallback
     );
   }
