@@ -125,11 +125,11 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   // Connect handler for creation of new session
   const handlePasswordLogin = (username = options.username, password = options.password) => {
     if (!username) {
-      throw '"username" option was not supplied for authentication';
+      throw new Error('"username" option was not supplied for authentication');
     }
 
     if (!password) {
-      throw '"password" option was not supplied for authentication';
+      throw new Error('"password" option was not supplied for authentication');
     }
 
     const data: API.CredentialsAuthenticationData = {
@@ -146,7 +146,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
   const handleRefreshTokenLogin = (refreshToken: string) => {
     if (!refreshToken) {
-      throw '"refreshToken" option was not supplied for authentication';
+      throw new Error('"refreshToken" option was not supplied for authentication');
     }
 
     const data: API.RefreshTokenAuthenticationData = {
@@ -317,7 +317,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
         if (isActive()) {
           if (attempts >= maxAttempts) {
             logger.error(`Socket disconnect timed out after ${timeoutMs} ms`);
-            reject('Socket disconnect timed out');
+            reject(new Error('Socket disconnect timed out'));
           } else {
             setTimeout(wait, checkInterval);
             attempts++;
@@ -343,7 +343,6 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
         }
       } else {
         logger.warn('Attempting to disconnect a closed socket (ignore)');
-        //throw 'Attempting to disconnect a closed socket';
       }
 
       return;
@@ -363,7 +362,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     // Username and password are not required if those are available in socket options
     connect: (username?: string, password?: string, reconnectOnFailure = true) => {
       if (isActive()) {
-        throw 'Connect may only be used for a closed socket';
+        throw new Error('Connect may only be used for a closed socket');
       }
 
       resetSession();
@@ -373,7 +372,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
     connectRefreshToken: (refreshToken: string, reconnectOnFailure = true) => {
       if (isActive()) {
-        throw 'Connect may only be used for a closed socket';
+        throw new Error('Connect may only be used for a closed socket');
       }
 
       resetSession();
@@ -384,7 +383,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     // Connect and attempt to associate the socket with an existing session
     reconnect: (token: API.AuthTokenType | undefined = undefined, reconnectOnFailure = true) => {
       if (isActive()) {
-        throw 'Reconnect may only be used for a closed socket';
+        throw new Error('Reconnect may only be used for a closed socket');
       }
 
       if (token) {
@@ -392,7 +391,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
       }
 
       if (!authToken) {
-        throw 'No session token available for reconnecting';
+        throw new Error('No session token available for reconnecting');
       }
 
       logger.info('Reconnecting socket');
@@ -463,7 +462,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     ...requests.socket,
   };
 
-  return socket!;
+  return socket;
 };
 
 export default ApiSocket;

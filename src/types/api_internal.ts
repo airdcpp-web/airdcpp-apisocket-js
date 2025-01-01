@@ -1,6 +1,5 @@
 // HELPERS
 export type CompletionIdType = number;
-//export type SubscriptionIdType = string;
 
 
 // REQUESTS

@@ -20,8 +20,8 @@ export interface MenuItemListHookData<IdT, EntityIdT> {
 }
 
 export interface ResponseMenuItemCallbackFields {
-  urls?: string[] | undefined;
-  form_definitions?: object[] | undefined;
+  urls?: string[];
+  form_definitions?: object[];
 }
 
 export type ResponseMenuItem<IdT, EntityIdT> = Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter' | 'urls' | 'form_definitions'> & ResponseMenuItemCallbackFields;

@@ -9,7 +9,7 @@ import { HookCallback, HookSubscriberInfo, SubscriptionRemoveHandler } from '../
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 import { jest } from '@jest/globals';
-import { waitForExpect } from './test-utils.js';
+import { defusedPromise, waitForExpect } from './test-utils.js';
 
 let server: ReturnType<typeof getMockServer>;
 
@@ -132,10 +132,7 @@ describe('socket', () => {
       // Dummy pending request
       server.ignoreMissingHandler('DELETE', 'dummyLogoutDelete');
 
-      socket.delete('dummyLogoutDelete').catch((error: Error) => {
-        // TODO: fix, too unreliable at the moment (depends on the timings)
-        //expect(error.message).toEqual('Socket disconnected');
-      });
+      const pendingRequestPromise = defusedPromise(socket.delete('dummyLogoutDelete'));
 
       // Logout
       server.addRequestHandler('DELETE', ApiConstants.LOGOUT_URL);
@@ -143,6 +140,8 @@ describe('socket', () => {
 
       expect(sessionResetCallback.mock.calls.length).toBe(1);
       await waitForExpect(() => expect(disconnectedCallback.mock.calls.length).toBe(1));
+
+      await expect(pendingRequestPromise).rejects.toMatchInlineSnapshot(`"Socket disconnected"`);
 
       expect(socket.isActive()).toEqual(false);
       expect(socket.hasListeners()).toEqual(false);
@@ -169,14 +168,14 @@ describe('socket', () => {
     test('should handle wait disconnected timeout', async () => {
       const { socket, mockConsole } = await getConnectedSocket(server);
 
-      let error;
+      let error: Error | null = null;
       try {
         await socket.waitDisconnected(50);
       } catch (e) {
         error = e;
       }
 
-      expect(error).toEqual('Socket disconnect timed out');
+      expect(error?.message).toEqual('Socket disconnect timed out');
 
       expect(mockConsole.error.mock.calls.length).toBe(1);
       expect(mockConsole.warn.mock.calls.length).toBe(0);
@@ -195,12 +194,7 @@ describe('socket', () => {
       socket.disconnect(true);
       jest.runOnlyPendingTimers();
       
-      // TODO: fix
-      /*{
-        const waitForExpectTask = await waitForExpect(() => expect(socket.isActive()).toEqual(false));
-        jest.advanceTimersByTime(1000);
-        await waitForExpectTask;
-      }*/
+      expect(socket.isActive()).toEqual(false);
 
       // Let it fail once
       server.stop();
@@ -271,9 +265,10 @@ describe('socket', () => {
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
     });
 
-    // TODO: fix
-    test.skip('should re-authenticate on lost session', async () => {
+    test('should re-authenticate on lost session', async () => {
       const ErrorResponse = 'Invalid session token';
+      const authCallback = jest.fn();
+      const connectErrorCallback = jest.fn();
 
       // Connect and disconnect
       const { socket, mockConsole } = await getConnectedSocket(server);
@@ -285,25 +280,16 @@ describe('socket', () => {
 
       // Fail the initial reconnect attempt with 'Invalid session token'
       // and connect with credentials afterwards
-      server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400);
+      server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400, connectErrorCallback);
       
-      const authCallback = jest.fn();
       server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
 
       jest.runOnlyPendingTimers();
       socket.reconnect();
 
-      {
-        const waitForExpectTask = waitForExpect(
-          () => {
-            jest.runOnlyPendingTimers();
-            expect(authCallback.mock.calls.length).toBe(1);
-          }
-        );
-
-        jest.advanceTimersByTime(1000);
-        await waitForExpectTask;
-      }
+      await jest.advanceTimersByTimeAsync(1000);
+      expect(authCallback.mock.calls.length).toBe(1);
+      expect(connectErrorCallback.mock.calls.length).toBe(1);
 
       expect(socket.isConnected()).toEqual(true);
       expect(mockConsole.error.mock.calls.length).toBe(0);
@@ -506,10 +492,8 @@ describe('socket', () => {
       }
 
       // Clean up
-      {
-        removeListener();
-        expect(socket.hasListeners()).toBe(false);
-      }
+      removeListener();
+      expect(socket.hasListeners()).toBe(false);
 
       expect(mockConsole.warn.mock.calls.length).toBe(0);
 

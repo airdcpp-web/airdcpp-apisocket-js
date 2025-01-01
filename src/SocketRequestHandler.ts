@@ -59,12 +59,12 @@ const SocketRequestHandler = (
     // Pre-checks
     if (!authenticating && !socket().isConnected()) {
       logger.warn(`Attempting to send request on a non-authenticated socket: ${path}`);
-      return Promise.reject('Not authorized');
+      return Promise.reject(new Error('Not authorized'));
     }
 
     if (!socket().nativeSocket) {
       logger.warn(`Attempting to send request without a socket: ${path}`);
-      return Promise.reject('No socket');
+      return Promise.reject(new Error('No socket'));
     }
 
     const callbackId = getCallbackId();
@@ -143,12 +143,10 @@ const SocketRequestHandler = (
     },
   
     delete: (path) => {
-      //invariant(!data, 'No data is allowed for delete command');
       return sendRequest('DELETE', path);
     },
   
     get: (path) => {
-      //invariant(!data, 'No data is allowed for get command');
       return sendRequest('GET', path);
     },
   
@@ -188,7 +186,7 @@ const SocketRequestHandler = (
       if (messageObj.code >= 200 && messageObj.code <= 204) {
         const { data } = messageObj as APIInternal.RequestSuccessResponse;
         if (!callbacks[id].ignored) {
-          logger.verbose(chalk.green(id.toString()), 'SUCCEEDED', data ? data : '(no data)');
+          logger.verbose(chalk.green(id.toString()), 'SUCCEEDED', data ?? '(no data)');
         }
 
         callbacks[id].resolver.resolve(data);
