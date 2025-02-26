@@ -1,7 +1,7 @@
 import { 
   DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_PARAMS, 
-  getConnectedSocket, getMockServer, getSocket
-} from './mock-server.js';
+  getConnectedSocket as getOriginalConnectedSocket, getMockServer as getOriginalMockServer, getSocket as getOriginalSocket
+} from './mocks';
 
 import ApiConstants from '../ApiConstants.js';
 
@@ -9,18 +9,23 @@ import { HookCallback, HookSubscriberInfo, SubscriptionRemoveHandler } from '../
 import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 import { jest } from '@jest/globals';
-import { defusedPromise, waitForExpect } from './test-utils.js';
-
-let server: ReturnType<typeof getMockServer>;
+import { defusedPromise, getMockConsole, waitForExpect } from './test-utils.js';
 
 const dummyfn = () => {
   // ..
 };
 
+
 // tslint:disable:no-empty
 describe('socket', () => {
+  let server: ReturnType<typeof getOriginalMockServer>;
+  let mockConsole: ReturnType<typeof getMockConsole>;
+  
   beforeEach(() => {
-    server = getMockServer();
+    mockConsole = getMockConsole();
+    server = getOriginalMockServer({
+      mockF: jest,
+    });
   });
 
   afterEach(() => {
@@ -28,12 +33,27 @@ describe('socket', () => {
     jest.useRealTimers();
   });
 
+  const getDefaultSocketOptions = () => ({
+    logOutput: mockConsole,
+  });
+
+  const getMockSocket = () => {
+    return getOriginalSocket(getDefaultSocketOptions());
+  }
+
+  
+  const getConnectedMockSocket = () => {
+    return getOriginalConnectedSocket(server, {
+      socketOptions: getDefaultSocketOptions(),
+    });
+  }
+
   describe('auth', () => {
     test('should handle valid credentials', async () => {
       server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
-      const { socket, mockConsole } = getSocket();
+      const { socket } = getMockSocket();
       socket.onConnected = connectedCallback;
       const response = await socket.connect();
 
@@ -52,7 +72,7 @@ describe('socket', () => {
       server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
       const connectedCallback = jest.fn();
 
-      const { socket, mockConsole } = getSocket();
+      const { socket } = getMockSocket();
       socket.onConnected = connectedCallback;
       const response = await socket.connectRefreshToken('refresh token');
 
@@ -70,7 +90,7 @@ describe('socket', () => {
     test('should handle invalid credentials', async () => {
       server.addErrorHandler('POST', ApiConstants.LOGIN_URL, 'Invalid username or password', 401);
 
-      const { socket, mockConsole } = getSocket();
+      const { socket } = getMockSocket();
       let error;
 
       try {
@@ -89,9 +109,10 @@ describe('socket', () => {
 
     test('should handle connect with custom credentials', async () => {
       server.stop();
-      const { socket } = getSocket({
+      const { socket } = getOriginalSocket({
         username: 'dummy',
         password: 'dummy',
+        ...getDefaultSocketOptions(),
       });
 
       // Fail without a server handler with auto reconnect disabled
@@ -106,7 +127,7 @@ describe('socket', () => {
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
 
       // Valid connect attempt
-      server = getMockServer();
+      server = getOriginalMockServer();
       server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
 
       await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
@@ -121,7 +142,7 @@ describe('socket', () => {
       const sessionResetCallback = jest.fn();
       const disconnectedCallback = jest.fn();
 
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
       socket.onSessionReset = sessionResetCallback;
       socket.onDisconnected = disconnectedCallback;
 
@@ -154,7 +175,7 @@ describe('socket', () => {
 
   describe('disconnect', () => {
     test('should handle disconnect', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       socket.disconnect();
 
@@ -166,7 +187,7 @@ describe('socket', () => {
     });
 
     test('should handle wait disconnected timeout', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       let error: Error | null = null;
       try {
@@ -187,7 +208,7 @@ describe('socket', () => {
 
   describe('reconnect', () => {
     test('should handle auto reconnect', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       jest.useFakeTimers();
 
@@ -202,7 +223,7 @@ describe('socket', () => {
       jest.runOnlyPendingTimers();
       expect(mockConsole.error.mock.calls.length).toBe(1);
 
-      server = getMockServer();
+      server = getOriginalMockServer();
       server.addRequestHandler('POST', ApiConstants.CONNECT_URL, undefined);
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
@@ -223,7 +244,7 @@ describe('socket', () => {
     });
 
     test('should cancel auto reconnect', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       jest.useFakeTimers();
 
@@ -249,7 +270,7 @@ describe('socket', () => {
     });
 
     test('should handle manual reconnect', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -271,7 +292,7 @@ describe('socket', () => {
       const connectErrorCallback = jest.fn();
 
       // Connect and disconnect
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       jest.useFakeTimers();
       socket.disconnect();
@@ -315,7 +336,7 @@ describe('socket', () => {
 
   describe('requests', () => {
     test('should report request timeouts', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       server.ignoreMissingHandler('POST', 'hubs/listeners/hub_updated');
       server.ignoreMissingHandler('POST', 'hubs/listeners/hub_added');
@@ -345,7 +366,7 @@ describe('socket', () => {
     });
 
     test('should handle missing error messages', async () => {
-      const { socket } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       server.addErrorHandler('POST', 'test/test', null, 401);
 
@@ -379,7 +400,7 @@ describe('socket', () => {
     };
 
     test('should handle listener messages', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
       server.addSubscriptionHandler('hubs', 'hub_updated');
       server.addSubscriptionHandler('hubs', 'hub_updated', entityId);
 
@@ -405,7 +426,7 @@ describe('socket', () => {
     });
 
     test('should handle listener removal', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
 
       const hubUpdatedListener = server.addSubscriptionHandler('hubs', 'hub_updated');
 
@@ -437,7 +458,7 @@ describe('socket', () => {
     });
 
     test('should handle view updates', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
       const viewUpdateCallback = jest.fn();
 
       const removeListener = socket.addViewUpdateListener('hub_user_view', viewUpdateCallback, entityId);
@@ -468,7 +489,7 @@ describe('socket', () => {
     };
 
     test('should handle hook actions', async () => {
-      const { socket, mockConsole } = await getConnectedSocket(server);
+      const { socket } = await getConnectedMockSocket();
       let removeListener: SubscriptionRemoveHandler | null = null;
 
       // Add hook
@@ -504,9 +525,10 @@ describe('socket', () => {
 
   describe('logging', () => {
     const connect = async (logLevel: string) => {
-      const { socket, mockConsole } = await getConnectedSocket(server, {
+      const { socket } = await getOriginalConnectedSocket(server, {
         socketOptions: {
           logLevel,
+          ...getDefaultSocketOptions(),
         },
       });
 

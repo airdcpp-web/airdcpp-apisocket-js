@@ -1,127 +1,33 @@
-import { Socket } from '../NodeSocket.js';
 import { Client, Server, WebSocket } from 'mock-socket';
-import { jest } from '@jest/globals';
 
-import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../types/api_internal.js';
-import * as Options from '../types/options.js';
-import ApiConstants from '../ApiConstants.js';
+import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../../types/api_internal.js';
 import { EventEmitter } from 'events';
+import { DEFAULT_CONNECT_PARAMS } from './mock-data.js';
 
-const VERBOSE = false;
-
-export const getMockConsole = () => ({
-  log: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    if (VERBOSE) {
-      console.log(a1, a2, a3, a4);
-    }
-  }),
-  info: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    if (VERBOSE) {
-      console.info(a1, a2, a3, a4);
-    }
-  }),
-  warn: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    console.warn(a1, a2, a3, a4);
-  }),
-  error: jest.fn((a1: any, a2: any, a3: any, a4: any) => {
-    console.error(a1, a2, a3, a4);
-  }),
-});
-
-const DEFAULT_CONNECT_PARAMS = {
-  username: 'test',
-  password: 'test',
-  url: 'ws://localhost:7171/api/v1/',
+interface MockFunctionCreator {
+  fn: (...args: any[]) => any;
 };
 
-const getDefaultSocketOptions = (mockConsole: Options.LogOutput): Options.APISocketOptions => ({
-  ...DEFAULT_CONNECT_PARAMS,
-  logOutput: mockConsole,
-  logLevel: VERBOSE ? 'verbose' : 'warn',
-});
-
-const DEFAULT_AUTH_RESPONSE = {
-  auth_token: 'b823187f-4aab-4b71-9764-e63e88401a26',
-  refresh_token: '5124faasf-4aab-4b71-9764-e63e88401a26',
-  user: {
-    permissions: [ 'admin' ],
-    username: 'test',
-    active_sessions: 1,
-    last_login: 0,
-  },
-  system: {
-    cid: 'AHLUODI2YZ2U7FDWMHFNJU65ERGKUN4MH7GW5LY',
-    hostname: 'ubuntu-htpc',
-    network_type: 'private',
-    path_separator: '/',
-    platform: 'other',
-    language: 'fi',
-  },
-  wizard_pending: false,
-};
-
-export type MockSocketOptions = Omit<Options.APISocketOptions, 'username' | 'password' | 'url'> & {
-  username?: string;
-  password?: string;
-  url?: string;
-};
-
-const getSocket = (socketOptions: MockSocketOptions = {}, mockConsole = getMockConsole()) => {
-  const socket = Socket(
-    {
-      ...getDefaultSocketOptions(mockConsole),
-      ...socketOptions,
-    }, 
-    WebSocket as any
-  );
-  
-  return { socket, mockConsole };
-};
-
-
-type Callback = (requestData: object) => void;
-
-interface ConnectOptions {
-  socketOptions?: MockSocketOptions;
-  authCallback?: Callback;
-  authResponse?: object;
-  console?: ReturnType<typeof getMockConsole>;
-}
-
-const getDefaultConnectOptions = () => ({
-  console: getMockConsole(),
-  authResponse: DEFAULT_AUTH_RESPONSE,
-});
-
-const getConnectedSocket = async (
-  server: ReturnType<typeof getMockServer>, 
-  userOptions?: ConnectOptions,
-) => {
-  const options = {
-    ...getDefaultConnectOptions(),
-    ...userOptions,
-  };
-
-  server.addRequestHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
-
-  const { socket, mockConsole } = getSocket(options.socketOptions, options.console);
-  await socket.connect();
-
-  return { socket, mockConsole };
-};
+type RequestCallback = (requestData: object) => void;
 
 const toEmitId = (path: string, method: string) => {
   return `${path}_${method}`;
 };
 
+const getDefaultMockCreatorF = () => ({
+  fn: () => {},
+});
+
 interface MockServerOptions {
   url: string;
   reportMissingListeners?: boolean;
+  mockF: MockFunctionCreator;
 }
 
 const DEFAULT_MOCK_SERVER_OPTIONS: MockServerOptions = {
   url: DEFAULT_CONNECT_PARAMS.url,
   reportMissingListeners: true,
+  mockF: getDefaultMockCreatorF(),
 }
 
 type MockRequestResponseDataObject<DataT extends object | undefined> = Omit<RequestSuccessResponse<DataT>, 'callback_id'> | Omit<RequestErrorResponse, 'callback_id'>;
@@ -129,7 +35,7 @@ type MockRequestResponseDataHandler<DataT extends object | undefined> = (request
 type MockRequestResponseData<DataT extends object | undefined> = MockRequestResponseDataObject<DataT> | MockRequestResponseDataHandler<DataT>;
 
 const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
-  const { url, reportMissingListeners }: MockServerOptions = {
+  const { url, reportMissingListeners, mockF }: MockServerOptions = {
     ...DEFAULT_MOCK_SERVER_OPTIONS,
     ...initialOptions,
   };
@@ -146,7 +52,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     method: string, 
     path: string, 
     responseData: MockRequestResponseData<DataT>,
-    subscriptionCallback?: Callback
+    subscriptionCallback?: RequestCallback
   ) => {
     emitter.addListener(
       toEmitId(path, method), 
@@ -179,7 +85,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     method: string, 
     path: string, 
     data?: DataT | MockRequestResponseDataHandler<DataT>, 
-    subscriptionCallback?: Callback
+    subscriptionCallback?: RequestCallback
   ) => {
     const handlerData = typeof data === 'function' ? data : {
       data,
@@ -199,7 +105,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     path: string, 
     errorStr: string | null, 
     errorCode: number, 
-    subscriptionCallback?: Callback
+    subscriptionCallback?: RequestCallback
   ) => {
     addServerHandler(
       method, 
@@ -220,8 +126,8 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     listenerName: string,
     entityId?: string | number,
   ) => {
-    const subscribeFn = jest.fn();
-    const unsubscribeFn = jest.fn();
+    const subscribeFn = mockF.fn();
+    const unsubscribeFn = mockF.fn();
 
     const path = entityId ? `${moduleName}/${entityId}/${type}/${listenerName}` : `${moduleName}/${type}/${listenerName}`;
 
@@ -262,8 +168,8 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     const subscriber = addSubscriptionHandlerImpl(moduleName, 'hooks', listenerName);
 
     const addResolver = (completionId: number) => {
-      const resolveFn = jest.fn();
-      const rejectFn = jest.fn();
+      const resolveFn = mockF.fn();
+      const rejectFn = mockF.fn();
 
       addRequestHandler(
         'POST', 
@@ -333,4 +239,4 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   };
 };
 
-export { getMockServer, getSocket, getConnectedSocket, DEFAULT_CONNECT_PARAMS, DEFAULT_AUTH_RESPONSE };
+export { getMockServer };

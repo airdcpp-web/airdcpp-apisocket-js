@@ -59,7 +59,7 @@
   "main": "./dist/NodeSocket.js",
   "exports": {
     ".": "./dist-es/NodeSocket.js",
-    "./tests/": "./dist-es/tests/"
+    "./tests": "./dist-es/tests/mocks/index.js"
   },
   "type": "module"
 }

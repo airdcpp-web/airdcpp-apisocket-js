@@ -1,7 +1,7 @@
 import { 
   getMockServer,
   getConnectedSocket,
-} from './mock-server.js';
+} from './mocks';
 import { waitForExpect } from './test-utils.js';
 
 import { jest } from '@jest/globals';
@@ -17,7 +17,9 @@ let server: ReturnType<typeof getMockServer>;
 describe('public helpers', () => {
 
   beforeEach(() => {
-    server = getMockServer();
+    server = getMockServer({
+      mockF: jest,
+    });
   });
 
   afterEach(() => {
