@@ -62,6 +62,10 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
         }
 
         const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
+        if (!data ||!data.code) {
+          throw new Error(`Mock server: response handler for path ${path} must return a status code`);
+        }
+
         const response: RequestSuccessResponse | RequestErrorResponse = {
           callback_id: request.callback_id,
           ...data,
