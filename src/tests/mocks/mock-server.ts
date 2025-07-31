@@ -54,35 +54,47 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     responseData: MockRequestResponseData<DataT>,
     subscriptionCallback?: RequestCallback
   ) => {
-    emitter.addListener(
-      toEmitId(path, method), 
-      (request: OutgoingRequest, s: WebSocket) => {
-        if (subscriptionCallback) {
-          subscriptionCallback(request);
-        }
-
-        const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
-        if (!data ||!data.code) {
-          throw new Error(`Mock server: response handler for path ${path} must return a status code`);
-        }
-
-        const response: RequestSuccessResponse | RequestErrorResponse = {
-          callback_id: request.callback_id,
-          ...data,
-        };
-
-        s.send(JSON.stringify(response));
+    const requestHandler = (request: OutgoingRequest, s: WebSocket) => {
+      if (subscriptionCallback) {
+        subscriptionCallback(request);
       }
+
+      const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
+      if (!data ||!data.code) {
+        throw new Error(`Mock server: response handler for path ${path} must return a status code`);
+      }
+
+      const response: RequestSuccessResponse | RequestErrorResponse = {
+        callback_id: request.callback_id,
+        ...data,
+      };
+
+      s.send(JSON.stringify(response));
+    };
+
+    const emitId = toEmitId(path, method);
+    emitter.addListener(
+      emitId, 
+      requestHandler,
     );
+    emitter.setMaxListeners(1);
+
+    return () => emitter.removeListener(emitId, requestHandler);
   };
 
   const addDummyDataHandler = (method: string, path: string) => {
+    const handler = (request: OutgoingRequest, s: WebSocket) => {
+      // Do nothing
+    };
+
+    const emitId = toEmitId(path, method);
     emitter.addListener(
-      toEmitId(path, method), 
-      (request: OutgoingRequest, s: WebSocket) => {
-        // Do nothing
-      }
+      emitId, 
+      handler
     );
+    emitter.setMaxListeners(1);
+
+    return () => emitter.removeListener(emitId, handler);
   }
 
   const addRequestHandler = <DataT extends object | undefined>(
@@ -96,7 +108,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       code: data ? 200 : 204,
     }
 
-    addServerHandler<DataT>(
+    return addServerHandler<DataT>(
       method, 
       path, 
       handlerData, 
@@ -111,7 +123,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     errorCode: number, 
     subscriptionCallback?: RequestCallback
   ) => {
-    addServerHandler(
+    return addServerHandler(
       method, 
       path, 
       {
@@ -135,8 +147,8 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
 
     const path = entityId ? `${moduleName}/${entityId}/${type}/${listenerName}` : `${moduleName}/${type}/${listenerName}`;
 
-    addRequestHandler('POST', path, undefined, subscribeFn);
-    addRequestHandler('DELETE', path, undefined, unsubscribeFn);
+    const subscribeRemove = addRequestHandler('POST', path, undefined, subscribeFn);
+    const unsubscribeRemove = addRequestHandler('DELETE', path, undefined, unsubscribeFn);
 
     const fire = (data: object, entityId?: string | number) => {
       send({
@@ -146,8 +158,14 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       });
     }
 
+    const remove = () => {
+      subscribeRemove();
+      unsubscribeRemove();
+    };
+
     return {
       fire,
+      remove,
 
       subscribeFn,
       unsubscribeFn,
@@ -175,19 +193,24 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       const resolveFn = mockF.fn();
       const rejectFn = mockF.fn();
 
-      addRequestHandler(
+      const resolveRemove = addRequestHandler(
         'POST', 
         `${subscriber.path}/${completionId}/resolve`, 
         undefined, 
         resolveFn
       );
 
-      addRequestHandler(
+      const rejectRemove = addRequestHandler(
         'POST', 
         `${subscriber.path}/${completionId}/reject`, 
         undefined, 
         rejectFn
       );
+
+      const remove = () => {
+        resolveRemove();
+        rejectRemove();
+      }
 
       const fire = (data: object) => {
         send({
@@ -197,7 +220,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
         });
       }
 
-      return { fire, resolveFn, rejectFn };
+      return { fire, remove, resolveFn, rejectFn };
     };
 
     return {

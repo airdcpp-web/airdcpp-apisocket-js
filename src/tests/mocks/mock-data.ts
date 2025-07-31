@@ -25,6 +25,7 @@ export const DEFAULT_CONNECT_RESPONSE = {
     platform: 'other',
     language: 'fi',
     client_started: 1483972366,
+    client_version: 'AirDC++w 2.14.0b-39-g3af3 x86_64',
   },
   wizard_pending: false,
 };
