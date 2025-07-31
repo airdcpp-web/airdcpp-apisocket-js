@@ -268,7 +268,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     };
 
     ws!.onerror = (event) => {
-      logger.error('Connecting socket failed');
+      logger.error('Connecting socket failed (network/system error, most likely the server is unreachable)');
       scheduleReconnect();
     };
   };
@@ -281,7 +281,7 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     forceNoAutoConnect = false;
     return new Promise(
       (resolve, reject) => {
-        logger.info('Starting socket connect');
+        logger.info(`Starting socket connect to ${userOptions.url}`);
         connectInternal(resolve, reject, authenticationHandler, reconnectOnFailure);
       }
     );
@@ -456,6 +456,10 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     
     get nativeSocket() {
       return ws;
+    },
+
+    get url() {
+      return userOptions.url;
     },
 
     ...subscriptions.socket,

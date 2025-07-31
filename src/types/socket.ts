@@ -26,4 +26,5 @@ export interface APISocket extends SocketRequestMethods, SocketSubscriptions {
   onSessionReset: SessionResetCallback | null;
   onDisconnected: DisconnectedCallback | null;
   readonly nativeSocket: WebSocket | null;
+  readonly url: string;
 }
