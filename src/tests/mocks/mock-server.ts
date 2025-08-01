@@ -2,7 +2,7 @@ import { Client, Server, WebSocket } from 'mock-socket';
 
 import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../../types/api_internal.js';
 import { EventEmitter } from 'events';
-import { DEFAULT_CONNECT_PARAMS } from './mock-data.js';
+import { MOCK_SERVER_URL } from './mock-data.js';
 
 interface MockFunctionCreator {
   fn: (...args: any[]) => any;
@@ -25,7 +25,7 @@ interface MockServerOptions {
 }
 
 const DEFAULT_MOCK_SERVER_OPTIONS: MockServerOptions = {
-  url: DEFAULT_CONNECT_PARAMS.url,
+  url: MOCK_SERVER_URL,
   reportMissingListeners: true,
   mockF: getDefaultMockCreatorF(),
 }
@@ -43,16 +43,19 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   const mockServer = new Server(url);
   let socket: Client;
   const emitter = new EventEmitter();
+  emitter.setMaxListeners(1);
 
   const send = (data: object) => {
     socket.send(JSON.stringify(data));
   };
 
+  const handlers: Map<string, () => any> = new Map();
+
   const addServerHandler = <DataT extends object | undefined>(
     method: string, 
     path: string, 
     responseData: MockRequestResponseData<DataT>,
-    subscriptionCallback?: RequestCallback
+    subscriptionCallback?: RequestCallback,
   ) => {
     const requestHandler = (request: OutgoingRequest, s: WebSocket) => {
       if (subscriptionCallback) {
@@ -72,14 +75,21 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       s.send(JSON.stringify(response));
     };
 
+    // Don't add duplicates
     const emitId = toEmitId(path, method);
-    emitter.addListener(
-      emitId, 
-      requestHandler,
-    );
-    emitter.setMaxListeners(1);
+    const removeExisting = handlers.get(emitId);
+    if (removeExisting) {
+      removeExisting();
+      handlers.delete(emitId);
+    }
 
-    return () => emitter.removeListener(emitId, requestHandler);
+    // Add new
+    emitter.addListener(emitId, requestHandler);
+
+    // Prepare for removal
+    const removeListener = () => emitter.removeListener(emitId, requestHandler);
+    handlers.set(emitId, removeListener)
+    return removeListener;
   };
 
   const addDummyDataHandler = (method: string, path: string) => {
@@ -244,10 +254,6 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     });
   });
 
-  mockServer.on('close', () => {
-    emitter.removeAllListeners();
-  });
-
   return {
     addRequestHandler,
     addErrorHandler,
@@ -258,7 +264,8 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     ignoreMissingHandler: addDummyDataHandler,
     stop: () => {
       mockServer.stop(() => {
-        // ...
+        emitter.removeAllListeners();
+        handlers.clear();
       });
     },
     send,
