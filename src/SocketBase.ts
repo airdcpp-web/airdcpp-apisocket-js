@@ -43,8 +43,10 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   let reconnectTimer: any;
   let forceNoAutoConnect = true;
 
+  let connectCallback: Socket.ConnectCallback | null = null;
   let connectedCallback: Socket.ConnectedCallback | null = null;
   let sessionResetCallback: Socket.SessionResetCallback | null = null;
+  let disconnectCallback: Socket.DisconnectCallback | null = null;
   let disconnectedCallback: Socket.DisconnectedCallback | null = null;
 
   const logger = SocketLogger(options);
@@ -279,6 +281,11 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     reconnectOnFailure: boolean
   ): Promise<API.AuthenticationResponse> => {
     forceNoAutoConnect = false;
+
+    if (connectCallback) {
+      connectCallback();
+    }
+
     return new Promise(
       (resolve, reject) => {
         logger.info(`Starting socket connect to ${userOptions.url}`);
@@ -346,6 +353,10 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
       }
 
       return;
+    }
+
+    if (disconnectCallback) {
+      disconnectCallback(reason);
     }
 
     logger.info('Disconnecting socket');
@@ -427,6 +438,11 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
     logger,
     waitDisconnected,
 
+    // Function to call each time a connect attempt is initiated
+    set onConnect(handler: Socket.ConnectCallback) {
+      connectCallback = handler;
+    },
+
     // Function to call each time the socket has been connected (and authorized)
     set onConnected(handler: Socket.ConnectedCallback) {
       connectedCallback = handler;
@@ -437,9 +453,18 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
       sessionResetCallback = handler;
     },
 
+    // Function to call each time the socket is being manually disconnected
+    set onDisconnect(handler: Socket.DisconnectCallback) {
+      disconnectCallback = handler;
+    },
+
     // Function to call each time the socket has been disconnected
     set onDisconnected(handler: Socket.DisconnectedCallback) {
       disconnectedCallback = handler;
+    },
+
+    get onConnect() {
+      return connectCallback!;
     },
 
     get onConnected() {
@@ -448,6 +473,10 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
     get onSessionReset() {
       return sessionResetCallback!;
+    },
+
+    get onDisconnect() {
+      return disconnectCallback!;
     },
 
     get onDisconnected() {
