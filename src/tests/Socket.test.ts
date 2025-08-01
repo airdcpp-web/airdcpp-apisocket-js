@@ -312,9 +312,7 @@ describe('socket', () => {
       const connectErrorCallback = jest.fn();
 
       // Connect and disconnect
-      const { socket } = await getConnectedMockSocket({
-        authCallback,
-      });
+      const { socket } = await getConnectedMockSocket();
 
       jest.useFakeTimers();
       socket.disconnect();
@@ -325,11 +323,13 @@ describe('socket', () => {
       // and connect with credentials afterwards
       server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400, connectErrorCallback);
 
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
+
       jest.runOnlyPendingTimers();
       socket.reconnect();
 
       await jest.advanceTimersByTimeAsync(1000);
-      expect(authCallback.mock.calls.length).toBe(2);
+      expect(authCallback.mock.calls.length).toBe(1);
       expect(connectErrorCallback.mock.calls.length).toBe(1);
 
       expect(socket.isConnected()).toEqual(true);

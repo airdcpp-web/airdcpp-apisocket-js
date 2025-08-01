@@ -240,6 +240,10 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     }
   }
 
+  const clearHandlers = () => {
+    emitter.removeAllListeners();
+    handlers.clear();
+  }
 
   mockServer.on('connection', s => {
     socket = s;
@@ -254,6 +258,12 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     });
   });
 
+  mockServer.on('close', () => {
+    // Remove handlers only after the socket was disconnected
+    // to allow it to complete all requests
+    clearHandlers();
+  });
+
   return {
     addRequestHandler,
     addErrorHandler,
@@ -263,10 +273,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
 
     ignoreMissingHandler: addDummyDataHandler,
     stop: () => {
-      mockServer.stop(() => {
-        emitter.removeAllListeners();
-        handlers.clear();
-      });
+      mockServer.stop();
     },
     send,
     url,
