@@ -1,8 +1,8 @@
+export const MOCK_SERVER_URL = 'ws://localhost:7171/api/v1/';
 
-export const DEFAULT_CONNECT_PARAMS = {
+export const DEFAULT_CONNECT_CREDENTIALS = {
   username: 'test',
   password: 'test',
-  url: 'ws://localhost:7171/api/v1/',
 };
 
 export const DEFAULT_CONNECT_RESPONSE = {

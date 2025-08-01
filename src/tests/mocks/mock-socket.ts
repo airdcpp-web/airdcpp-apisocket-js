@@ -5,10 +5,10 @@ import * as Options from '../../types/options.js';
 import ApiConstants from '../../ApiConstants.js';
 
 import { getMockServer } from './mock-server.js';
-import { DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_PARAMS } from './mock-data.js';
+import { DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_CREDENTIALS, MOCK_SERVER_URL } from './mock-data.js';
 
 const getDefaultSocketOptions = (): Options.APISocketOptions => ({
-  ...DEFAULT_CONNECT_PARAMS,
+  url: MOCK_SERVER_URL,
   logOutput: console,
   logLevel: 'warn',
 });
@@ -27,7 +27,7 @@ interface MockSocketOptions {
   socketOptions?: MockSocketConnectOptions;
 }
 
-interface MockConnectedSocketOptions extends MockSocketOptions {
+export interface MockConnectedSocketOptions extends MockSocketOptions {
   authCallback?: RequestCallback;
   authResponse: object;
 }
@@ -37,7 +37,7 @@ export const getSocket = (socketOptions: MockSocketConnectOptions = {}) => {
   const socket = Socket(
     {
       ...getDefaultSocketOptions(),
-      ...socketOptions,
+      ...socketOptions
     },
     WebSocket as any
   );
@@ -59,10 +59,14 @@ export const getConnectedSocket = async (
     ...userOptions,
   };
 
-  server.addRequestHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
+  const removeAuthHandler = server.addRequestHandler('POST', ApiConstants.LOGIN_URL, options.authResponse, options.authCallback);
 
-  const { socket } = getSocket(options.socketOptions);
+  const { socket } = getSocket({
+    ...DEFAULT_CONNECT_CREDENTIALS,
+    ...getDefaultSocketOptions(),
+    ...options.socketOptions
+  });
   await socket.connect();
 
-  return { socket };
+  return { socket, removeAuthHandler };
 };

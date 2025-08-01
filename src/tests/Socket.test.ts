@@ -1,6 +1,7 @@
 import { 
-  DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_PARAMS, 
-  getConnectedSocket as getOriginalConnectedSocket, getMockServer as getOriginalMockServer, getSocket as getOriginalSocket
+  DEFAULT_AUTH_RESPONSE, DEFAULT_CONNECT_CREDENTIALS, 
+  getConnectedSocket as getOriginalConnectedSocket, getMockServer as getOriginalMockServer, getSocket as getOriginalSocket,
+  MockConnectedSocketOptions,
 } from './mocks';
 
 import ApiConstants from '../ApiConstants.js';
@@ -34,6 +35,7 @@ describe('socket', () => {
   });
 
   const getDefaultSocketOptions = () => ({
+    ...DEFAULT_CONNECT_CREDENTIALS,
     logOutput: mockConsole,
   });
 
@@ -42,9 +44,10 @@ describe('socket', () => {
   }
 
   
-  const getConnectedMockSocket = () => {
+  const getConnectedMockSocket = (options?: Partial<MockConnectedSocketOptions>) => {
     return getOriginalConnectedSocket(server, {
       socketOptions: getDefaultSocketOptions(),
+      ...options,
     });
   }
 
@@ -69,7 +72,8 @@ describe('socket', () => {
     });
 
     test('should handle valid refresh token', async () => {
-      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
+      const onAuth = jest.fn();
+      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, onAuth);
       const connectedCallback = jest.fn();
 
       const { socket } = getMockSocket();
@@ -77,6 +81,22 @@ describe('socket', () => {
       const response = await socket.connectRefreshToken('refresh token');
 
       expect(connectedCallback).toHaveBeenCalledWith(DEFAULT_AUTH_RESPONSE);
+
+      expect(onAuth).toHaveBeenCalled();
+      expect(onAuth.mock.calls[0]).toMatchInlineSnapshot(`
+[
+  {
+    "callback_id": 1,
+    "data": {
+      "grant_type": "refresh_token",
+      "refresh_token": "refresh token",
+    },
+    "method": "POST",
+    "path": "sessions/authorize",
+  },
+]
+`);
+
       expect(response).toEqual(DEFAULT_AUTH_RESPONSE);
       expect(socket.isConnected()).toEqual(true);
 
@@ -110,15 +130,15 @@ describe('socket', () => {
     test('should handle connect with custom credentials', async () => {
       server.stop();
       const { socket } = getOriginalSocket({
+        ...getDefaultSocketOptions(),
         username: 'dummy',
         password: 'dummy',
-        ...getDefaultSocketOptions(),
       });
 
       // Fail without a server handler with auto reconnect disabled
       let error;
       try {
-        await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
+        await socket.connect(DEFAULT_CONNECT_CREDENTIALS.username, DEFAULT_CONNECT_CREDENTIALS.password, false);
       } catch (e) {
         error = e;
       }
@@ -130,7 +150,7 @@ describe('socket', () => {
       server = getOriginalMockServer();
       server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE);
 
-      await socket.connect(DEFAULT_CONNECT_PARAMS.username, DEFAULT_CONNECT_PARAMS.password, false);
+      await socket.connect(DEFAULT_CONNECT_CREDENTIALS.username, DEFAULT_CONNECT_CREDENTIALS.password, false);
 
       expect(socket.isConnected()).toEqual(true);
 
@@ -292,7 +312,9 @@ describe('socket', () => {
       const connectErrorCallback = jest.fn();
 
       // Connect and disconnect
-      const { socket } = await getConnectedMockSocket();
+      const { socket } = await getConnectedMockSocket({
+        authCallback,
+      });
 
       jest.useFakeTimers();
       socket.disconnect();
@@ -302,14 +324,12 @@ describe('socket', () => {
       // Fail the initial reconnect attempt with 'Invalid session token'
       // and connect with credentials afterwards
       server.addErrorHandler('POST', ApiConstants.CONNECT_URL, ErrorResponse, 400, connectErrorCallback);
-      
-      server.addRequestHandler('POST', ApiConstants.LOGIN_URL, DEFAULT_AUTH_RESPONSE, authCallback);
 
       jest.runOnlyPendingTimers();
       socket.reconnect();
 
       await jest.advanceTimersByTimeAsync(1000);
-      expect(authCallback.mock.calls.length).toBe(1);
+      expect(authCallback.mock.calls.length).toBe(2);
       expect(connectErrorCallback.mock.calls.length).toBe(1);
 
       expect(socket.isConnected()).toEqual(true);
@@ -446,7 +466,7 @@ describe('socket', () => {
       removeListener1();
       expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(0); // Shouldn't call API yet, still one left
 
-      removeListener2();
+      await removeListener2();
       await waitForExpect(() => expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(1));
 
       expect(socket.hasListeners()).toBe(false);
@@ -513,7 +533,7 @@ describe('socket', () => {
       }
 
       // Clean up
-      removeListener();
+      await removeListener();
       expect(socket.hasListeners()).toBe(false);
 
       expect(mockConsole.warn.mock.calls.length).toBe(0);
