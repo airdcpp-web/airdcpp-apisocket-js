@@ -236,7 +236,7 @@ describe('public helpers', () => {
       }
 
       // Remove items
-      removeMenuItems();
+      await removeMenuItems();
       expect(socket.hasListeners()).toBe(false);
     });
   });

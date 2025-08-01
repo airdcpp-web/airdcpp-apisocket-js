@@ -143,8 +143,8 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
     menu
   );
 
-  return () => {
-    removeHook();
-    removeListener();
+  return async () => {
+    await removeHook();
+    await removeListener();
   };
 };

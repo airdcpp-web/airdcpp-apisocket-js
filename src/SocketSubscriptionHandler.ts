@@ -43,7 +43,7 @@ const SocketSubscriptionHandler = (
   // Subscriptions pending to be added in the API
   const pendingSubscriptions: { [key: string]: PendingSubscription[] } = {};
 
-  const removeSocketListener = (
+  const removeSocketListener = async (
     subscriptionUrl: string, 
     subscriptionId: string, 
     callback: Subscriptions.HookCallback<any, any> | Subscriptions.SubscriptionCallback<any>, 
@@ -58,11 +58,12 @@ const SocketSubscriptionHandler = (
 
     if (subscriptions[subscriptionId] === 0) {
       if (sendApi && socket().isConnected()) {
-        socket().delete(subscriptionUrl)
-          .catch(
-            (error: Requests.ErrorResponse) => {
-              logger.error('Failed to remove socket listener', subscriptionUrl, error);
-            });
+        try {
+          await socket().delete(subscriptionUrl);
+        } catch (error) {
+          const e: Requests.ErrorResponse = error;
+          logger.error('Failed to remove socket listener', subscriptionUrl, e);
+        };
       }
 
       delete subscriptions[subscriptionId];

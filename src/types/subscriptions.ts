@@ -2,7 +2,7 @@ import * as API from './api.js';
 
 
 // SUBSCRIPTIONS
-export type SubscriptionRemoveHandler = (sendApi?: boolean) => void;
+export type SubscriptionRemoveHandler = (sendApi?: boolean) => Promise<void>;
 
 export type SubscriptionCallback<
   DataT extends object | void = object,
