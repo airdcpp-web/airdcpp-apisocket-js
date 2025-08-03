@@ -4,6 +4,9 @@ import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '.
 import { EventEmitter } from 'events';
 import { MOCK_SERVER_URL } from './mock-data.js';
 
+import Logger from '../../SocketLogger.js';
+import { LoggerOptions } from '../../NodeSocket.js';
+
 interface MockFunctionCreator {
   fn: (...args: any[]) => any;
 };
@@ -18,16 +21,25 @@ const getDefaultMockCreatorF = () => ({
   fn: () => {},
 });
 
-interface MockServerOptions {
+type DelayF =  () => number;
+
+export interface MockServerOptions {
   url: string;
   reportMissingListeners?: boolean;
   mockF: MockFunctionCreator;
+  delayMs: number | DelayF;
+  loggerOptions: LoggerOptions;
 }
 
 const DEFAULT_MOCK_SERVER_OPTIONS: MockServerOptions = {
   url: MOCK_SERVER_URL,
   reportMissingListeners: true,
   mockF: getDefaultMockCreatorF(),
+  delayMs: 0,
+  loggerOptions: {
+    logLevel: 'warn',
+    logOutput: console,
+  }
 }
 
 type MockRequestResponseDataObject<DataT extends object | undefined> = Omit<RequestSuccessResponse<DataT>, 'callback_id'> | Omit<RequestErrorResponse, 'callback_id'>;
@@ -35,11 +47,12 @@ type MockRequestResponseDataHandler<DataT extends object | undefined> = (request
 type MockRequestResponseData<DataT extends object | undefined> = MockRequestResponseDataObject<DataT> | MockRequestResponseDataHandler<DataT>;
 
 const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
-  const { url, reportMissingListeners, mockF }: MockServerOptions = {
+  const { url, reportMissingListeners, mockF, delayMs, loggerOptions }: MockServerOptions = {
     ...DEFAULT_MOCK_SERVER_OPTIONS,
     ...initialOptions,
   };
 
+  const logger = Logger(loggerOptions);
   const mockServer = new Server(url);
   let socket: Client;
   const emitter = new EventEmitter();
@@ -58,10 +71,6 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     subscriptionCallback?: RequestCallback,
   ) => {
     const requestHandler = (request: OutgoingRequest, s: WebSocket) => {
-      if (subscriptionCallback) {
-        subscriptionCallback(request);
-      }
-
       const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
       if (!data ||!data.code) {
         throw new Error(`Mock server: response handler for path ${path} must return a status code`);
@@ -72,7 +81,15 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
         ...data,
       };
 
-      s.send(JSON.stringify(response));
+      const delay = typeof delayMs === 'function' ? delayMs() : delayMs;
+      setTimeout(() => {
+        logger.verbose(`Mock server: sending response for request ${request.callback_id} (${method} ${path}):`, data);
+        if (subscriptionCallback) {
+          subscriptionCallback(request);
+        }
+
+        s.send(JSON.stringify(response));
+      }, delay);
     };
 
     // Don't add duplicates
@@ -161,6 +178,12 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
     const unsubscribeRemove = addRequestHandler('DELETE', path, undefined, unsubscribeFn);
 
     const fire = (data: object, entityId?: string | number) => {
+      if (entityId) {
+        logger.verbose(`Mock server: firing subscriber ${moduleName} ${listenerName} for entity ${entityId}:`, data);
+      } else {
+        logger.verbose(`Mock server: firing subscriber ${moduleName} ${listenerName}:`, data);
+      }
+
       send({
         event: listenerName,
         data,
@@ -223,6 +246,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       }
 
       const fire = (data: object) => {
+        logger.verbose(`Mock server: firing hook ${moduleName} ${listenerName}:`, data);
         send({
           event: listenerName,
           data,
@@ -253,7 +277,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       const emitId = toEmitId(request.path, request.method);
       const processed = emitter.emit(emitId, request, s);
       if (reportMissingListeners && !processed) {
-        console.warn(`Mock server: no listeners for event ${request.method} ${request.path}`);
+        logger.warn(`Mock server: no listeners for event ${request.method} ${request.path}`);
       }
     });
   });

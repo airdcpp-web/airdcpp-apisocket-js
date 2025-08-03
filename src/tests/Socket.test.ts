@@ -248,6 +248,7 @@ describe('socket', () => {
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
+      jest.runOnlyPendingTimers();
 
       expect(socket.isConnected()).toEqual(true);
       expect(mockConsole.warn.mock.calls.length).toBe(0);
