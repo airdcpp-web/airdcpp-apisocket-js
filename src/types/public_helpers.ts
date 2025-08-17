@@ -27,4 +27,5 @@ export interface ContextMenuItem<IdT, EntityIdT, FormValueT extends object = obj
   filter?: AsyncCallbackProperty<IdT, EntityIdT, boolean>;
   access?: string;
   formDefinitions?: object[] | AsyncCallbackProperty<IdT, EntityIdT, object[]>;
+  children?: ContextMenuItem<IdT, EntityIdT, FormValueT>[];
 }

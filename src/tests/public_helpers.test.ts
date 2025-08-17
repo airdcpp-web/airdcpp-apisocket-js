@@ -32,6 +32,12 @@ describe('public helpers', () => {
   const MENU_ITEM1_ID = 'mock_id_1';
   const MENU_ITEM2_ID = 'mock_id_2';
   const MENU_ITEM3_ID = 'mock_id_3';
+
+  const MENU_ITEM4_LEVEL1_ID = 'mock_id_4_level1';
+  const MENU_ITEM4_LEVEL2_ID = 'mock_id_4_level2';
+  const MENU_ITEM4_LEVEL2_DUMMY_ID = 'mock_id_4_level2_dummy';
+  const MENU_ITEM4_LEVEL3_ID = 'mock_id_4_level3';
+
   const SUBSCRIBER_INFO: HookSubscriberInfo = {
     id: 'mock-id',
     name: 'mock-hook'
@@ -76,6 +82,48 @@ describe('public helpers', () => {
     urls: URLS,
   };
 
+  const MENU_ITEM4_LEVEL2 = {
+    id: MENU_ITEM4_LEVEL2_ID,
+    title: 'Mock item 4 level 2',
+    icon: {
+      semantic: 'mock_semantic_icon_child1',
+    },
+  }
+  
+  const MENU_ITEM4_LEVEL2_DUMMY = {
+    id: MENU_ITEM4_LEVEL2_DUMMY_ID,
+    title: 'Mock item 4 level 2 dummy',
+    icon: {
+      semantic: 'mock_semantic_icon_child2',
+    },
+  }
+
+  const MENU_ITEM4_LEVEL3 = {
+    id: MENU_ITEM4_LEVEL3_ID,
+    title: 'Mock item 4 level 3',
+    icon: {
+      semantic: 'mock_semantic_icon_child1_1',
+    },
+  };
+
+  const MENU_ITEM4 = {
+    id: MENU_ITEM4_LEVEL1_ID,
+    title: 'Mock item 4 level 1',
+    icon: {
+      semantic: 'mock_semantic_icon4',
+    },
+    children: [
+      {
+        ...MENU_ITEM4_LEVEL2,
+        children: [
+          MENU_ITEM4_LEVEL3,
+        ]
+      },
+      MENU_ITEM4_LEVEL2_DUMMY,
+    ]
+  };
+
+
   const VALID_ACCESS = 'valid_access';
 
   const PERMISSIONS = [ VALID_ACCESS ];
@@ -88,13 +136,15 @@ describe('public helpers', () => {
     menuitems: [
       MENU_ITEM1,
       MENU_ITEM2,
-      MENU_ITEM3
+      MENU_ITEM3,
+      MENU_ITEM4
     ]
   };
       
 
   describe('context menu items', () => {
-    test('should add context menu items', async () => {
+
+    const openMenu = async () => {
       // Socket handlers
       const { socket } = await getConnectedSocket(server);
 
@@ -104,10 +154,14 @@ describe('public helpers', () => {
       const listItemsResolver = listItemsHook.addResolver(HOOK_COMPLETION_ID);
 
       // Add menu items
-      const onClickItem1Mock = jest.fn();
-      const onClickItem2Mock = jest.fn();
-      const onGetUrlsItem3Mock = jest.fn();
-      const onClickItemIgnoredMock = jest.fn();
+      const mockClickHandlers = {
+        onClickItem1: jest.fn(),
+        onClickItem2: jest.fn(),
+        onGetUrlsItem3: jest.fn(),
+        onClickItemIgnored: jest.fn(),
+        onClickLevel3: jest.fn(),
+        onClickLevel2Dummy: jest.fn(),
+      };
 
 
       const removeMenuItems = await addContextMenuItems<string>(
@@ -120,7 +174,7 @@ describe('public helpers', () => {
             },
             access: VALID_ACCESS,
             onClick: (props) => {
-              onClickItem1Mock(props);
+              mockClickHandlers.onClickItem1(props);
             },
             formDefinitions: () => {
               return FORM_DEFINITIONS;
@@ -128,29 +182,51 @@ describe('public helpers', () => {
           }, {
             ...MENU_ITEM2,
             onClick: (props) => {
-              onClickItem2Mock(props);
+              mockClickHandlers.onClickItem2(props);
             }
           }, {
             ...MENU_ITEM3,
             urls: (props) => {
-              onGetUrlsItem3Mock(props);
+              mockClickHandlers.onGetUrlsItem3(props);
               return URLS;
             }
-          }, {
+          }, 
+          {
+            ...MENU_ITEM4,
+            children: [
+              {
+                ...MENU_ITEM4_LEVEL2,
+                children: [
+                  {
+                    ...MENU_ITEM4_LEVEL3,
+                    onClick: (props) => {
+                      mockClickHandlers.onClickLevel3(props);
+                    }
+                  }
+                ]
+              }, {
+                ...MENU_ITEM4_LEVEL2_DUMMY,
+                onClick: (props) => {
+                  mockClickHandlers.onClickLevel2Dummy(props);
+                }
+              }
+            ]
+          },
+          {
             id: 'ignored_filter_id',
             title: 'Mock item ignored by filter',
             filter: () => {
               return false;
             },
             onClick: (props) => {
-              onClickItemIgnoredMock(props);
+              mockClickHandlers.onClickItemIgnored(props);
             }
           }, {
             id: 'ignored_access_id',
             title: 'Mock item ignored by access',
             access: 'invalid_access',
             onClick: (props) => {
-              onClickItemIgnoredMock(props);
+              mockClickHandlers.onClickItemIgnored(props);
             }
           }
         ],
@@ -187,7 +263,7 @@ describe('public helpers', () => {
         );
 
         await waitForExpect(() => {
-          expect(onGetUrlsItem3Mock).toHaveBeenCalledTimes(1);
+          expect(mockClickHandlers.onGetUrlsItem3).toHaveBeenCalledTimes(1);
         });
 
         const urlCallbackProps: MenuCallbackProperties<string, null> = {
@@ -197,8 +273,24 @@ describe('public helpers', () => {
           supports: SUPPORTS
         }
 
-        expect(onGetUrlsItem3Mock).toHaveBeenCalledWith(urlCallbackProps);
+        expect(mockClickHandlers.onGetUrlsItem3).toHaveBeenCalledWith(urlCallbackProps);
       }
+
+      return {
+        mockClickHandlers,
+        itemSelectedListener,
+        listItemsHook,
+        listItemsResolver,
+
+        socket,
+        removeMenuItems,
+      }
+    };
+
+    test('should add context menu items', async () => {
+      const { mockClickHandlers, itemSelectedListener, removeMenuItems, socket } = await openMenu();
+
+      const { onClickItem1, onClickItem2, onClickItemIgnored } = mockClickHandlers;
 
       // Select event listener
       {
@@ -219,7 +311,7 @@ describe('public helpers', () => {
       // Validate select event results
       {
         await waitForExpect(() => {
-          expect(onClickItem1Mock).toHaveBeenCalledTimes(1);
+          expect(onClickItem1).toHaveBeenCalledTimes(1);
         });
 
         const clickHandlerProps: MenuClickHandlerProperties<string, null> = {
@@ -230,9 +322,53 @@ describe('public helpers', () => {
           formValues: FORM_VALUES
         }
 
-        expect(onClickItem1Mock).toHaveBeenCalledWith(clickHandlerProps);
-        expect(onClickItem2Mock).not.toHaveBeenCalled();
-        expect(onClickItemIgnoredMock).not.toHaveBeenCalled();
+        expect(onClickItem1).toHaveBeenCalledWith(clickHandlerProps);
+        expect(onClickItem2).not.toHaveBeenCalled();
+        expect(onClickItemIgnored).not.toHaveBeenCalled();
+      }
+
+      // Remove items
+      await removeMenuItems();
+      expect(socket.hasListeners()).toBe(false);
+    });
+
+
+    test('should handle nested menu items', async () => {
+      const { mockClickHandlers, itemSelectedListener, removeMenuItems, socket } = await openMenu();
+
+      const { onClickLevel3 } = mockClickHandlers;
+
+      // Select event listener
+      {
+        const selectData: SelectedMenuItemListenerData<string, number> = {
+          menuitem_id: MENU_ITEM4_LEVEL3_ID,
+          hook_id: SUBSCRIBER_INFO.id,
+          menu_id: MENU_ID,
+          entity_id: 5,
+          selected_ids: selectedMenuIds,
+          permissions: PERMISSIONS,
+          supports: SUPPORTS,
+          form_values: {},
+        };
+
+        itemSelectedListener.fire(selectData);
+      }
+
+      // Validate select event results
+      {
+        await waitForExpect(() => {
+          expect(onClickLevel3).toHaveBeenCalledTimes(1);
+        });
+
+        const clickHandlerProps: MenuClickHandlerProperties<string, number> = {
+          selectedIds: selectedMenuIds, 
+          entityId: 5, 
+          permissions: PERMISSIONS, 
+          supports: SUPPORTS, 
+          formValues: {}
+        }
+
+        expect(onClickLevel3).toHaveBeenCalledWith(clickHandlerProps);
       }
 
       // Remove items

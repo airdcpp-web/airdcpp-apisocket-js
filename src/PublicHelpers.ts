@@ -81,6 +81,26 @@ const parseCallbackData = async <IdT, EntityIdT extends EntityId | undefined = u
   return {};
 };
 
+const findMenuItemById = <IdT, EntityIdT extends EntityId | undefined = undefined>(
+  id: string,
+  menuItems: ContextMenuItem<IdT, EntityIdT>[]
+): ContextMenuItem<IdT, EntityIdT> | undefined => {
+  for (const item of menuItems) {
+    if (item.id === id) {
+      return item;
+    }
+
+    if (item.children) {
+      const found = findMenuItemById(id, item.children);
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return undefined;
+};
+
 export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | undefined = undefined>(
   socket: APISocket,
   menuItems: ContextMenuItem<IdT, EntityIdT>[],
@@ -92,7 +112,7 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
     `${menuTypeId}_menuitem_selected`, 
     async (data) => {
       if (data.hook_id === menu.id) {
-        const menuItem = menuItems.find(i => data.menuitem_id === i.id);
+        const menuItem = findMenuItemById(data.menuitem_id, menuItems);
         if (!!menuItem) {
           const isValid = await validateItem(menuItem, data);
           if (isValid && !!menuItem.onClick) {
@@ -109,6 +129,48 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
       }
     }
   );
+
+  type ParsedItem = Omit<ContextMenuItem<IdT, EntityIdT>, 'onClick' | 'filter' | 'urls' | 'formDefinitions' | 'children'> &
+    { urls?: string[]; form_definitions?: object[]; children?: ParsedItem[] };
+
+  const parseMenuItem = async (item: ContextMenuItem<IdT, EntityIdT>, data: MenuItemListHookData<IdT, EntityIdT>) => {
+    const isValid = await validateItem(item, data);
+    if (isValid) {
+      const parsedCallbackData = await parseCallbackData(item, data);
+
+      const { onClick, id, title, icon, children } = item;
+
+      const isValid = !!onClick || (!!parsedCallbackData.urls && parsedCallbackData.urls.length) || !!children;
+      if (isValid) {
+        const validChildren: ParsedItem[] = [];
+        if (children) {
+          for (const child of children) {
+            const validChild = await parseMenuItem(child, data);
+            if (validChild) {
+              validChildren.push(validChild);
+            }
+          }
+        }
+
+        const validItem: ParsedItem = {
+          id, 
+          title, 
+          icon,
+          ...parsedCallbackData,
+        };
+
+        if (validChildren.length > 0) {
+          validItem.children = validChildren;
+        }
+
+        return validItem;
+      } else {
+        socket.logger.warn(`Context menu item ${id} does not have a valid action, children or URLs, skipping`, item);
+      }
+    }
+
+    return null;
+  }
   
   const removeHook = await socket.addHook<
     MenuItemListHookData<IdT, EntityIdT>, 
@@ -119,19 +181,9 @@ export const addContextMenuItems = async <IdT, EntityIdT extends EntityId | unde
     async (data, accept, reject) => {
       const validItems = [];
       for (const item of menuItems) {
-        const isValid = await validateItem(item, data);
-        if (isValid) {
-          const parsedCallbackData = await parseCallbackData(item, data);
-
-          const { onClick, id, title, icon } = item;
-          if (!!onClick || (!!parsedCallbackData.urls && parsedCallbackData.urls.length)) {
-            validItems.push({
-              id, 
-              title, 
-              icon,
-              ...parsedCallbackData,
-            });
-          }
+        const validItem = await parseMenuItem(item, data);
+        if (validItem) {
+          validItems.push(validItem);
         }
       }
 
