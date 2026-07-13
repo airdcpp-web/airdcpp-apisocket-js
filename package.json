@@ -42,7 +42,7 @@
     "@babel/preset-env": "^7.20.2",
     "@types/invariant": "^2.2.35",
     "@types/jest": "^30.0.0",
-    "@types/node": "^24.1.0",
+    "@types/node": "^26.1.1",
     "jest": "^30.0.5",
     "jest-cli": "^30.0.5",
     "jest-environment-node-debug": "^2.0.0",
