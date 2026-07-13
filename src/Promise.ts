@@ -1,9 +1,9 @@
 // Use native promises when available
 let AppPromise: PromiseConstructor;
-if (typeof Promise !== 'undefined') {
-  AppPromise = Promise;
-} else {
+if (typeof Promise === 'undefined') {
   AppPromise = require('promise');
+} else {
+  AppPromise = Promise;
 }
 
 

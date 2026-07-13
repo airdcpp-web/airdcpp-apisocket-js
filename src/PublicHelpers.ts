@@ -10,14 +10,14 @@ const checkAccess = <IdT, EntityIdT>(menuItem: ContextMenuItem<IdT, EntityIdT>, 
     return true;
   }
 
-  return permissions.indexOf('admin') !== -1 || permissions.indexOf(menuItem.access) !== -1;
+  return permissions.includes('admin') || permissions.includes(menuItem.access);
 };
 
 const URLS_SUPPORT = 'urls';
 const FORM_SUPPORT = 'form';
 
 const hasSupport = (support: string, supports: string[]) => {
-  return !!supports && supports.indexOf(support) !== -1;
+  return !!supports && supports.includes(support);
 };
 
 // Check whether the item passes the access and filter checks

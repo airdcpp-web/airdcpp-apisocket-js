@@ -1,5 +1,6 @@
 import invariant from 'invariant';
-import { EventEmitter } from 'events';
+
+import { EventEmitter } from 'node:events';
 
 import { eventIgnored } from './utils.js';
 import Promise, { PendingResult } from './Promise.js';
@@ -163,11 +164,11 @@ const SocketSubscriptionHandler = (
     // Listen to a specific event and manage the API subscription automatically
     addListener: (apiModule, event, callback, entityId) => {
       if (!socket().isConnected()) {
-        throw 'Listeners can be added only for a connected socket';
+        throw new Error('Listeners can be added only for a connected socket');
       }
     
       invariant(
-        apiModule.indexOf('/') === -1, 
+        !apiModule.includes('/'), 
         'The first argument should only contain the API section without any path tokens (entity ID should be supplied separately)'
       );
   
@@ -189,17 +190,17 @@ const SocketSubscriptionHandler = (
       subscriberInfo: Subscriptions.HookSubscriberInfo
     ) => {
       if (!socket().isConnected()) {
-        throw 'Hooks can be added only for a connected socket';
+        throw new Error('Hooks can be added only for a connected socket');
       }
     
       invariant(
-        apiModule.indexOf('/') === -1, 
+        !apiModule.includes('/'), 
         'The first argument should only contain the API section without any path tokens'
       );
   
       const subscriptionId = event;
       if (subscriptions[subscriptionId] || pendingSubscriptions[subscriptionId]) {
-        throw 'Hook exists';
+        throw new Error('Hook exists');
       }
   
       const subscriptionUrl = `${apiModule}/hooks/${event}`;

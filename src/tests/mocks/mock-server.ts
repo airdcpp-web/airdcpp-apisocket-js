@@ -1,11 +1,12 @@
 import { Client, Server, WebSocket } from 'mock-socket';
 
 import { OutgoingRequest, RequestSuccessResponse, RequestErrorResponse } from '../../types/api_internal.js';
-import { EventEmitter } from 'events';
 import { MOCK_SERVER_URL } from './mock-data.js';
 
 import Logger from '../../SocketLogger.js';
 import { LoggerOptions } from '../../NodeSocket.js';
+
+import { EventEmitter } from 'node:events';
 
 interface MockFunctionCreator {
   fn: (...args: any[]) => any;
@@ -72,7 +73,7 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
   ) => {
     const requestHandler = (request: OutgoingRequest, s: WebSocket) => {
       const data = typeof responseData === 'function' ? responseData(request, s) : responseData;
-      if (!data ||!data.code) {
+      if (!data?.code) {
         throw new Error(`Mock server: response handler for path ${path} must return a status code`);
       }
 
@@ -154,9 +155,9 @@ const getMockServer = (initialOptions: Partial<MockServerOptions> = {}) => {
       method, 
       path, 
       {
-        error: !errorStr ? null as any : {
+        error: errorStr ? {
           message: errorStr,
-        },
+        } : null as any,
         code: errorCode,
       }, 
       subscriptionCallback

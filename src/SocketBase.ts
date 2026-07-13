@@ -176,13 +176,13 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
 
   // Called after a successful authentication request
   const onSocketAuthenticated = (data: API.AuthenticationResponse) => {
-    if (!authToken) {
+    if (authToken) {
+      // Existing session
+      logger.info('Socket associated with an existing session');
+    } else {
       // New session
       logger.info('Login succeed');
       authToken = data.auth_token;
-    } else {
-      // Existing session
-      logger.info('Socket associated with an existing session');
     }
 
     if (connectedCallback) {
@@ -341,15 +341,15 @@ const ApiSocket = (userOptions: Options.APISocketOptions, WebSocketImpl: WebSock
   // Disconnects the socket but keeps the session token
   const disconnect = (autoConnect = false, reason = 'Manually disconnected by the client'): void => {
     if (!ws) {
-      if (!forceNoAutoConnect) {
-        if (!autoConnect) {
+      if (forceNoAutoConnect) {
+        logger.warn('Attempting to disconnect a closed socket (ignore)');
+      } else {
+        if (autoConnect) {
+          logger.verbose('Attempting to disconnect a closed socket with auto reconnect enabled (continue connecting)');
+        } else {
           logger.verbose('Disconnecting a closed socket with auto reconnect enabled (cancel reconnect)');
           disableReconnect();
-        } else {
-          logger.verbose('Attempting to disconnect a closed socket with auto reconnect enabled (continue connecting)');
         }
-      } else {
-        logger.warn('Attempting to disconnect a closed socket (ignore)');
       }
 
       return;

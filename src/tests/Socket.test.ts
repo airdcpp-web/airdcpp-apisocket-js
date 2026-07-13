@@ -11,6 +11,7 @@ import { IncomingSubscriptionEvent } from '../types/api_internal.js';
 
 import { jest } from '@jest/globals';
 import { defusedPromise, getMockConsole, waitForExpect } from './test-utils.js';
+import { ErrorResponse } from '../NodeSocket.js';
 
 const dummyfn = () => {
   // ..
@@ -64,7 +65,7 @@ describe('socket', () => {
       expect(response).toEqual(DEFAULT_AUTH_RESPONSE);
       expect(socket.isConnected()).toEqual(true);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       expect(socket.getPendingRequestCount()).toBe(0);
 
       socket.disconnect();
@@ -100,7 +101,7 @@ describe('socket', () => {
       expect(response).toEqual(DEFAULT_AUTH_RESPONSE);
       expect(socket.isConnected()).toEqual(true);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       expect(socket.getPendingRequestCount()).toBe(0);
 
       socket.disconnect();
@@ -111,19 +112,20 @@ describe('socket', () => {
       server.addErrorHandler('POST', ApiConstants.LOGIN_URL, 'Invalid username or password', 401);
 
       const { socket } = getMockSocket();
-      let error;
+      let error: ErrorResponse | null = null;
 
       try {
         await socket.connect();
       } catch (e) {
-        error = e;
+        error = e as ErrorResponse;
       }
 
-      expect(error.code).toEqual(401);
-      expect(error.message).toEqual('Invalid username or password');
+      expect(error).toBeDefined();
+      expect(error!.code).toEqual(401);
+      expect(error!.message).toEqual('Invalid username or password');
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
 
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
       expect(socket.getPendingRequestCount()).toBe(0);
     });
 
@@ -167,7 +169,7 @@ describe('socket', () => {
       socket.onDisconnected = disconnectedCallback;
 
       // Dummy listener
-      server.addRequestHandler('POST', 'hubs/listeners/hub_updated', undefined);
+      server.addRequestHandler('POST', 'hubs/listeners/hub_updated');
       await socket.addListener('hubs', 'hub_updated', dummyfn);
 
       // Dummy pending request
@@ -179,8 +181,8 @@ describe('socket', () => {
       server.addRequestHandler('DELETE', ApiConstants.LOGOUT_URL);
       await socket.logout();
 
-      expect(sessionResetCallback.mock.calls.length).toBe(1);
-      await waitForExpect(() => expect(disconnectedCallback.mock.calls.length).toBe(1));
+      expect(sessionResetCallback.mock.calls).toHaveLength(1);
+      await waitForExpect(() => expect(disconnectedCallback.mock.calls).toHaveLength(1));
 
       await expect(pendingRequestPromise).rejects.toMatchInlineSnapshot(`"Socket disconnected"`);
 
@@ -188,7 +190,7 @@ describe('socket', () => {
       expect(socket.hasListeners()).toEqual(false);
       expect(socket.getPendingRequestCount()).toEqual(0);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       expect(socket.getPendingRequestCount()).toBe(0);
     });
   });
@@ -201,25 +203,25 @@ describe('socket', () => {
 
       await socket.waitDisconnected();
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
     });
 
     test('should handle wait disconnected timeout', async () => {
       const { socket } = await getConnectedMockSocket();
 
-      let error: Error | null = null;
+      let error: ErrorResponse | null = null;
       try {
         await socket.waitDisconnected(50);
       } catch (e) {
-        error = e;
+        error = e as ErrorResponse;
       }
 
       expect(error?.message).toEqual('Socket disconnect timed out');
 
-      expect(mockConsole.error.mock.calls.length).toBe(1);
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(1);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -241,17 +243,17 @@ describe('socket', () => {
       server.stop();
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
-      expect(mockConsole.error.mock.calls.length).toBe(1);
+      expect(mockConsole.error.mock.calls).toHaveLength(1);
 
       server = getOriginalMockServer();
-      server.addRequestHandler('POST', ApiConstants.CONNECT_URL, undefined);
+      server.addRequestHandler('POST', ApiConstants.CONNECT_URL);
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
 
       expect(socket.isConnected()).toEqual(true);
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       expect(socket.getPendingRequestCount()).toBe(0);
 
       socket.disconnect();
@@ -283,7 +285,7 @@ describe('socket', () => {
       jest.runOnlyPendingTimers();
       jest.runOnlyPendingTimers();
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
 
       const waitForExpectTask = waitForExpect(() => expect(socket.isActive()).toEqual(false));
       jest.advanceTimersByTime(1000);
@@ -296,11 +298,11 @@ describe('socket', () => {
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
 
-      server.addRequestHandler('POST', ApiConstants.CONNECT_URL, undefined);
+      server.addRequestHandler('POST', ApiConstants.CONNECT_URL);
       await socket.reconnect();
       expect(socket.isConnected()).toEqual(true);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
       expect(socket.getPendingRequestCount()).toBe(0);
 
       socket.disconnect();
@@ -330,18 +332,18 @@ describe('socket', () => {
       socket.reconnect();
 
       await jest.advanceTimersByTimeAsync(1000);
-      expect(authCallback.mock.calls.length).toBe(1);
-      expect(connectErrorCallback.mock.calls.length).toBe(1);
+      expect(authCallback.mock.calls).toHaveLength(1);
+      expect(connectErrorCallback.mock.calls).toHaveLength(1);
 
       expect(socket.isConnected()).toEqual(true);
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
       expect(socket.getPendingRequestCount()).toBe(0);
       
 
       // Ensure that we received the "invalid token" error
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
-      const loggedWarningIndex = mockConsole.warn.mock.calls[0].find(str => str.indexOf(ErrorResponse) !== -1);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
+      const loggedWarningIndex = mockConsole.warn.mock.calls[0].find(str => str.includes(ErrorResponse));
       expect(loggedWarningIndex).toBeDefined();
 
       socket.disconnect();
@@ -373,7 +375,7 @@ describe('socket', () => {
       jest.setSystemTime(new Date(Date.now() + 35000));
       (socket as any).reportRequestTimeouts();
 
-      expect(mockConsole.warn.mock.calls.length).toBe(2);
+      expect(mockConsole.warn.mock.calls).toHaveLength(2);
       
       expect(socket.getPendingRequestCount()).toBe(2);
 
@@ -391,15 +393,16 @@ describe('socket', () => {
 
       server.addErrorHandler('POST', 'test/test', null, 401);
 
-      let error;
+      let error: ErrorResponse | null = null;
       try {
         await socket.post('test/test', { test: 'test' });
       } catch (e) {
-        error = e;
+        error = e as ErrorResponse;
       }
       
-      expect(error.code).toEqual(401);
-      expect(error.message).toEqual('(no error description)');
+      expect(error).toBeDefined();
+      expect(error!.code).toEqual(401);
+      expect(error!.message).toEqual('(no error description)');
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -437,10 +440,10 @@ describe('socket', () => {
       expect(commonSubscriptionCallback).toHaveBeenCalledWith(commonData.data, undefined);
       expect(entitySubscriptionCallback).toHaveBeenCalledWith(commonData.data, entityId);
 
-      expect(commonSubscriptionCallback.mock.calls.length).toBe(2);
-      expect(entitySubscriptionCallback.mock.calls.length).toBe(1);
+      expect(commonSubscriptionCallback.mock.calls).toHaveLength(2);
+      expect(entitySubscriptionCallback.mock.calls).toHaveLength(1);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -461,18 +464,18 @@ describe('socket', () => {
       const removeListener1 = await p1;
       const removeListener2 = await p2;
 
-      expect(hubUpdatedListener.subscribeFn.mock.calls.length).toBe(1);
+      expect(hubUpdatedListener.subscribeFn.mock.calls).toHaveLength(1);
       expect(socket.getPendingSubscriptionCount()).toBe(0);
 
       removeListener1();
-      expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(0); // Shouldn't call API yet, still one left
+      expect(hubUpdatedListener.unsubscribeFn.mock.calls).toHaveLength(0); // Shouldn't call API yet, still one left
 
       await removeListener2();
-      await waitForExpect(() => expect(hubUpdatedListener.unsubscribeFn.mock.calls.length).toBe(1));
+      await waitForExpect(() => expect(hubUpdatedListener.unsubscribeFn.mock.calls).toHaveLength(1));
 
       expect(socket.hasListeners()).toBe(false);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -488,7 +491,7 @@ describe('socket', () => {
       removeListener();
 
       expect(socket.hasListeners()).toBe(false);
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -524,20 +527,20 @@ describe('socket', () => {
           hookSubscriberInfo
         );
 
-        expect((hook.subscribeFn.mock.calls[0][0] as any).data).toEqual(hookSubscriberInfo);
-        expect(hook.subscribeFn.mock.calls.length).toBe(1);
+        expect((hook.subscribeFn.mock.calls[0][0]).data).toEqual(hookSubscriberInfo);
+        expect(hook.subscribeFn.mock.calls).toHaveLength(1);
 
         // Simulate action
         const hookResolver = hook.addResolver(HOOK_COMPLETION_ID);
         hookResolver.fire({});
-        await waitForExpect(() => expect(hookResolver.rejectFn.mock.calls.length).toBe(1));
+        await waitForExpect(() => expect(hookResolver.rejectFn.mock.calls).toHaveLength(1));
       }
 
       // Clean up
       await removeListener();
       expect(socket.hasListeners()).toBe(false);
 
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -564,10 +567,10 @@ describe('socket', () => {
     test('should respect error log level', async () => {
       const { socket, mockConsole } = await connect('error');
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(0);
-      expect(mockConsole.info.mock.calls.length).toBe(0);
-      expect(mockConsole.log.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(0);
+      expect(mockConsole.info.mock.calls).toHaveLength(0);
+      expect(mockConsole.log.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -576,10 +579,10 @@ describe('socket', () => {
     test('should respect warn log level', async () => {
       const { socket, mockConsole } = await connect('warn');
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
-      expect(mockConsole.info.mock.calls.length).toBe(0);
-      expect(mockConsole.log.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
+      expect(mockConsole.info.mock.calls).toHaveLength(0);
+      expect(mockConsole.log.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -588,10 +591,10 @@ describe('socket', () => {
     test('should respect info log level', async () => {
       const { socket, mockConsole } = await connect('info');
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
-      expect(mockConsole.info.mock.calls.length).toBe(4);
-      expect(mockConsole.log.mock.calls.length).toBe(0);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
+      expect(mockConsole.info.mock.calls).toHaveLength(4);
+      expect(mockConsole.log.mock.calls).toHaveLength(0);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));
@@ -600,10 +603,10 @@ describe('socket', () => {
     test('should respect verbose log level', async () => {
       const { socket, mockConsole } = await connect('verbose');
 
-      expect(mockConsole.error.mock.calls.length).toBe(0);
-      expect(mockConsole.warn.mock.calls.length).toBe(1);
-      expect(mockConsole.info.mock.calls.length).toBe(4);
-      expect(mockConsole.log.mock.calls.length).toBe(2);
+      expect(mockConsole.error.mock.calls).toHaveLength(0);
+      expect(mockConsole.warn.mock.calls).toHaveLength(1);
+      expect(mockConsole.info.mock.calls).toHaveLength(4);
+      expect(mockConsole.log.mock.calls).toHaveLength(2);
 
       socket.disconnect();
       await waitForExpect(() => expect(socket.isActive()).toEqual(false));

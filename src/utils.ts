@@ -8,7 +8,7 @@ export const eventIgnored = (path: string, ignoredEvents?: Options.IgnoreMatcher
 
   // Array?
   if (Array.isArray(ignoredEvents)) {
-    return ignoredEvents.indexOf(path) !== -1;
+    return ignoredEvents.includes(path);
   }
 
   // Regexp
